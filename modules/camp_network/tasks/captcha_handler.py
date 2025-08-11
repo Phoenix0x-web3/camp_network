@@ -201,7 +201,7 @@ class CloudflareHandler:
         max_retry = 10
         captcha_token = None
 
-        if not Settings().actual_ua:
+        if not Settings().actual_ua or Settings().capmonster_api_key == "b6******************************":
             raise Exception("Insert CapMonster Api Key to files/settings.yaml")
 
         for i in range(max_retry):
