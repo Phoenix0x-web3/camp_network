@@ -20,6 +20,22 @@ from utils.db_api.models import Wallet
 from utils.encryption import get_private_key, prk_encrypt
 from data.settings import Settings
 
+def parse_proxy(proxy: str | None) -> Optional[str]:
+    if not proxy:
+        return None
+    if proxy.startswith('http'):
+        return proxy
+    elif "@" in proxy and not proxy.startswith('http'):
+        return "http://" + proxy
+    else:
+        value = proxy.split(':')
+        if len(value) == 4:
+            ip, port, login, password = value
+            return f'http://{login}:{password}@{ip}:{port}'
+        else:
+            print(f"Invalid proxy format: {proxy}")
+            return None 
+
 def remove_line_from_file(value: str, filename: str) -> bool:
     file_path = os.path.join(FILES_DIR, filename)
 
@@ -48,20 +64,19 @@ def read_lines(path: str) -> List[str]:
         return []
     with open(file_path, encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
-
+    
 class Import:
-
 
     @staticmethod
     def parse_wallet_from_txt() -> List[Dict[str, Optional[str]]]:
 
-        private_keys   = read_lines("privatekeys.txt")
+        private_keys   = read_lines("private_keys.txt")
         proxies        = read_lines("proxy.txt")
         twitter_tokens = read_lines("twitter_tokens.txt")
         discord_tokens = read_lines("discord_tokens.txt")
 
         if not private_keys or not proxies:
-            raise ValueError("File privatekeys.txt и proxy.txt must contain information")
+            raise ValueError("File private_keys.txt и proxy.txt must contain information")
 
         record_count = len(private_keys)
 
@@ -77,7 +92,7 @@ class Import:
         for i in range(record_count):
             wallets.append({
                 "private_key": private_keys[i],
-                "proxy": pick_proxy(i),
+                "proxy": parse_proxy(pick_proxy(i)),
                 "twitter_token": twitter_tokens[i] if i < len(twitter_tokens) else None,
                 "discord_token": discord_tokens[i] if i < len(discord_tokens) else None,
             })
@@ -108,9 +123,9 @@ class Import:
 
         for wl in wallets:
 
-            decoded_private_key = get_private_key(wl.private_key)
+            encoded_private_key = get_private_key(wl.private_key)
 
-            client = Client(private_key=decoded_private_key,
+            client = Client(private_key=encoded_private_key,
                             network=Networks.Ethereum)
 
             wallet_instance = get_wallet_by_address(address=client.account.address)
@@ -119,10 +134,10 @@ class Import:
                 changed = False
 
                 if wallet_instance.address == client.account.address:
-                    wallet_instance.private_key = prk_encrypt(decoded_private_key) if not 'gAAAA' in wl.private_key else wl.private_key
+                    wallet_instance.private_key = prk_encrypt(encoded_private_key)
                     changed = True
 
-                if wallet_instance.proxy != wl.proxy:
+                if wallet_instance.proxy != parse_proxy(wl.proxy):
                     wallet_instance.proxy = wl.proxy
                     changed = True
 
@@ -137,20 +152,19 @@ class Import:
                 if changed:
                     db.commit()
                     edited.append(wallet_instance)
-                    remove_line_from_file(wl.private_key, "privatekeys.txt")
+                    remove_line_from_file(wl.private_key, "private_keys.txt")
 
                 continue
 
             wallet_instance = Wallet(
-                private_key=prk_encrypt(wl.private_key) if not 'gAAAA' in wl.private_key else wl.private_key,
+                private_key=prk_encrypt(encoded_private_key),
                 address=client.account.address,
                 proxy=wl.proxy,
                 twitter_token=wl.twitter_token,
                 discord_token=wl.discord_token,
-                wallet_type = random.choice(['Metamask', 'Rabby Wallet', 'OKX Wallet'])
             )
 
-            remove_line_from_file(wl.private_key, "privatekeys.txt")
+            remove_line_from_file(wl.private_key, "private_keys.txt")
 
             if not wallet_instance.twitter_token:
                 logger.warning(f'{wallet_instance.id} | {wallet_instance.address} | Twitter Token not found, Twitter Action will be skipped')
@@ -165,8 +179,8 @@ class Import:
             f'Done! imported wallets: {len(imported)}/{total}; '
             f'edited wallets: {len(edited)}/{total}; total: {total}'
         )
-        
-        
+
+       
     
 class Sync:
     
@@ -190,7 +204,7 @@ class Sync:
         wallets: List[Dict[str, Optional[str]]] = []
         for i in range(record_count):
             wallets.append({
-                "proxy": pick_proxy(i),
+                "proxy": parse_proxy(pick_proxy(i)),
                 "twitter_token": twitter_tokens[i] if i < len(twitter_tokens) else None,
                 "discord_token": discord_tokens[i] if i < len(discord_tokens) else None,
             })
@@ -256,7 +270,7 @@ class Sync:
 class Export:
 
     _FILES = {
-        "private_key":   "exported_privatekeys.txt",
+        "private_key":   "exported_private_keys.txt",
         "proxy":         "exported_proxy.txt",
         "twitter_token": "exported_twitter_tokens.txt",
         "discord_token": "exported_discord_tokens.txt",
