@@ -44,8 +44,10 @@ solvecaptcha_api_key: 34******************************
 use_ref_code: True
 #Use ref code only from files/ref_codes.txt
 use_only_file_ref_code: False
-#Perform automatic replacement from proxy and twitter reserve files
-resources_auto_replace: True
+#Perform automatic replacement from proxy reserve files
+auto_replace_proxy: True
+#Perform automatic replacement from twitter reserve files
+auto_replace_twitter: False
 #Maximum possible number of errors before replacement
 resources_max_failures: 3
 # Random pause between twitter actions in seconds
@@ -63,9 +65,15 @@ onchain_actions: [
     "omnihub_mint",
     "tavern_quest",
     "mintpad",
+    "bleetz",
+    "chainbills",
+    "conft",
+    "copass",
+    "mysphere",
+    "storychain",
 ]
 #Multiple actions for onchain. Example mint one type NFT > 1 times. 
-mulitple_actions: True
+mulitple_actions: false
 #Use faucet if wallet balance > 0
 use_faucet_if_balance: False
 #Name quest for logger. Ids quest for complete
@@ -115,6 +123,9 @@ quests_name_and_ids: {
         "PlenaTG":"332b56cd-d85d-41d1-87b9-d2200d5f994e",
         "PlenaDS":"757f9546-e431-4a8d-9934-a93b1dcf5bbe",
         "RemasterMarketPlace":"2109ea82-5cad-4c38-af6b-209db82188d2",
+        "RupturelabsTG": "760e5ae4-16a9-44a1-9e3f-cd6a62a76a10",
+        "RupturelabsDS": "c7f504bc-bb29-44a2-ac42-df9ce74bdf7b"
+        
     }
 #Twitter quests
 quests_twitter: {

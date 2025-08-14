@@ -303,7 +303,7 @@ class BaseHttpClient:
                         await resource_manager.mark_proxy_as_bad(self.user.private_key)
 
                         # If auto-replace is enabled, try to replace proxy
-                        if self.settings.resources_auto_replace:
+                        if self.settings.auto_replace_proxy:
                             success, message = await resource_manager.replace_proxy(
                                 self.user.private_key
                             )

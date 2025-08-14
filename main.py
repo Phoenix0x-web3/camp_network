@@ -22,6 +22,7 @@ PROJECT_ACTIONS =   [
                     "Complete Twitter Quests", 
                     "Complete Onchain and Faucet",
                     "Complete Faucet",
+                    "Update Points",
                     "Back"
                     ]
 
@@ -94,6 +95,9 @@ async def choose_action():
 
     elif action == "Complete Faucet":
         await activity(action=5)
+
+    elif action == "Update Points":
+        await activity(action=6)
 
     elif action == "Exit":
         console.print(f"[bold red]Exiting {PROJECT}...[/bold red]")

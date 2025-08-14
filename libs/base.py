@@ -1,6 +1,7 @@
 import asyncio
 import random
 import time
+from dataclasses import dataclass
 
 import aiohttp
 from eth_account.messages import encode_defunct, encode_typed_data, _hash_eip191_message
@@ -11,7 +12,7 @@ from web3.contract.async_contract import AsyncContract
 from web3.contract.contract import Contract
 
 from libs.eth_async.client import Client
-from libs.eth_async.data.models import TokenAmount, TxArgs, Networks
+from libs.eth_async.data.models import TokenAmount, TxArgs, Networks, DefaultABIs
 from libs.eth_async.utils.utils import randfloat
 
 from data.models import Contracts
@@ -19,6 +20,12 @@ from utils.browser import BaseAsyncSession, Browser
 from utils.db_api.models import Wallet
 from utils.logs_decorator import controller_log
 
+@dataclass
+class TransactionResult:
+    success: bool
+    tx_hash: str | None = None
+    error_message: str | None= None
+    receipt: dict | None = None
 
 class Base:
     __module__ = 'Web3 Base'
@@ -223,13 +230,90 @@ class Base:
     async def check_nft_balance(
         self,
         contract: AsyncContract | Contract,
+        id: int | None = None
     ):
-        module_contract = self.client.w3.eth.contract(
-            address=self.client.w3.to_checksum_address(contract.address),
-            abi=contract.abi,
-        )
-        balance = await module_contract.functions.balanceOf(
-            self.client.account.address
-        ).call()
+        if id:
+            module_contract = self.client.w3.eth.contract(
+                address=self.client.w3.to_checksum_address(contract.address),
+                abi=[{
+                'constant': True,
+                'inputs': [{'name': 'account', 'type': 'address'}, {'name': 'id', 'type': 'uint256'}],
+                'name': 'balanceOf',
+                'outputs': [{'name': '', 'type': 'uint256'}],
+                'payable': False,
+                'stateMutability': 'view',
+                'type': 'function'}]
+            )
+            balance = await module_contract.functions.balanceOf(
+                self.client.account.address, id
+            ).call()
+        else:
+            module_contract = self.client.w3.eth.contract(
+                address=self.client.w3.to_checksum_address(contract.address),
+                abi=DefaultABIs.Token
+            )
+            balance = await module_contract.functions.balanceOf(
+                self.client.account.address
+            ).call()
 
         return balance
+
+    async def execute_transaction(
+        self,
+        tx_params: TxParams,
+        activity_type: str = "unknown",
+        timeout: int = 180,
+        retry_count: int = 0,
+    ) -> TransactionResult:
+        attempt = 0
+        last_error = None
+
+        while attempt <= retry_count:
+            try:
+                logger.info(
+                    f"{self.wallet} Executing {activity_type} transaction"
+                    f"{f' (attempt {attempt + 1})' if attempt > 0 else ''}"
+                )
+                # Send transaction
+                tx = await self.client.transactions.sign_and_send(tx_params=tx_params)
+
+                # Wait for confirmation
+                receipt = await tx.wait_for_receipt(self.client, timeout=timeout)
+
+                if receipt and tx.params:
+                    # Check status
+                    status = receipt.get("status", 1)
+                    if status == 0:
+                        raise Exception("Transaction reverted")
+
+                    logger.success(
+                        f"{self.client.account.address} transaction confirmed: {tx.hash.hex() if tx.hash else 0}"
+                    )
+
+                    return TransactionResult(
+                        success=True,
+                        tx_hash=tx.hash.hex() if tx.hash else "0",
+                        receipt=receipt,
+                    )
+                else:
+                    raise Exception("Transaction receipt timeout")
+
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"Transaction failed on attempt {attempt + 1}: {e}")
+
+                # Check specific errors
+                if "insufficient funds" in str(e).lower():
+                    # No point in retrying
+                    break
+                if attempt < retry_count:
+                    # Wait before retry
+                    await asyncio.sleep(5 * (attempt + 1))
+
+                attempt += 1
+
+        return TransactionResult(
+            success=False,
+            error_message=last_error or "Unknown error",
+        )
+
