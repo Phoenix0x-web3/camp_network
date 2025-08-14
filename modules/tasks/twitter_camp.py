@@ -4,9 +4,9 @@ from typing import List, Dict
 from loguru import logger
 
 from data.settings import Settings
-from modules.camp_network.tasks.http_client import BaseHttpClient
-from modules.camp_network.tasks.quests import QuestClient
-from modules.camp_network.tasks.resource_manager import ResourceManager
+from modules.tasks.http_client import BaseHttpClient
+from modules.tasks.quests import QuestClient
+from modules.tasks.resource_manager import ResourceManager
 from utils.db_api.models import Wallet
 from utils.db_api.wallet_api import update_twitter_token, get_wallet_by_private_key, get_completed_quests
 from utils.twitter.twitter_client import TwitterClient
@@ -104,7 +104,7 @@ class TwitterService(BaseHttpClient):
         Returns:
             True if token was replaced and Twitter reconnected, False otherwise.
         """
-        if not Settings().resources_auto_replace:
+        if not Settings().auto_replace_twitter:
             logger.info(f"{self.user} Twitter token replacement disabled in settings")
             return False
 

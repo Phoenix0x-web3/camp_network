@@ -1,7 +1,7 @@
 from libs.eth_async.client import Client
 from libs.base import Base
 
-from modules.camp_network.camp_client import CampNetworkClient
+from modules.camp_client import CampNetworkClient
 from utils.db_api.models import Wallet
 from utils.logs_decorator import controller_log
 
@@ -31,3 +31,6 @@ class Controller:
     @controller_log('Faucet')
     async def complete_faucet(self):
         return await self.camp_client.complete_faucet()
+    @controller_log('Update Points')
+    async def update_points(self):
+        return await self.camp_client.update_points()

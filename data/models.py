@@ -67,3 +67,44 @@ class Contracts(Singleton):
         address="0x00000000009a1E02f00E280dcfA4C81c55724212",
         abi=read_json(path=(ABIS_DIR, "rarible.json")),
     )
+
+    REMIX = RawContract(
+        title="REMIX",
+        address="0xF90733b9eCDa3b49C250B2C3E3E42c96fC93324E",
+        abi=read_json(path=(ABIS_DIR, "remix.json"))
+    )
+    BLEETZ = RawContract(
+        title="BLEETZ",
+        address="0x0b0A5B8e848b27a05D5cf45CAab72BC82dF48546",
+        abi='[{"inputs":[],"name":"mintGamerID","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
+    )
+    CHAINBILLS = RawContract(
+        title="CHAINBILLS",
+        address="0x92e67Bfe49466b18ccDF2A3A28B234AB68374c60",
+        abi=read_json(path=(ABIS_DIR, "chainbills.json"))
+    )
+    CONFT = RawContract(
+        title="CONFT",
+        address="0x7A72942d0F7C4d8909dC1f078319E97F06701092",
+        abi=read_json(path=(ABIS_DIR, "conft.json"))
+    )
+    COPASS = RawContract(
+        title="COPASS",
+        address="0x2907aD6D787Df0eAA53b6C1C8dd6948475234C3f",
+        abi=read_json(path=(ABIS_DIR, "copass.json"))
+    )
+    MERV = RawContract(
+        title="MERV",
+        address="0xe5e5bE029793A4481287Be2BFc37e2D38316c422",
+        abi=read_json(path=(ABIS_DIR, "merv.json"))
+    )
+    MYSPHERE_POST = RawContract(
+        title="MYSPHERE_POST",
+        address="0x177Af844a3c7A1749dE97656a5d84b6373Fc350E",
+        abi=read_json(path=(ABIS_DIR, "mysphere.json"))
+    )
+    MYSPHERE_NFT = RawContract(
+        title="MYSPHERE_NFT",
+        address="0x1eD74B27f846C699A90926daD057A7f6FD22C126",
+        abi=read_json(path=(ABIS_DIR, "mysphere.json"))
+    )

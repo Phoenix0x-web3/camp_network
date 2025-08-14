@@ -44,8 +44,10 @@ solvecaptcha_api_key: 34******************************
 use_ref_code: True
 #Use ref code only from files/ref_codes.txt
 use_only_file_ref_code: False
-#Perform automatic replacement from proxy and twitter reserve files
-resources_auto_replace: True
+#Perform automatic replacement from proxy reserve files
+auto_replace_proxy: True
+#Perform automatic replacement from twitter reserve files
+auto_replace_twitter: False
 #Maximum possible number of errors before replacement
 resources_max_failures: 3
 # Random pause between twitter actions in seconds
@@ -63,9 +65,15 @@ onchain_actions: [
     "omnihub_mint",
     "tavern_quest",
     "mintpad",
+    "bleetz",
+    "chainbills",
+    "conft",
+    "copass",
+    "mysphere",
+    "storychain",
 ]
 #Multiple actions for onchain. Example mint one type NFT > 1 times. 
-mulitple_actions: True
+mulitple_actions: false
 #Use faucet if wallet balance > 0
 use_faucet_if_balance: False
 #Name quest for logger. Ids quest for complete

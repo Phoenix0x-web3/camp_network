@@ -7,12 +7,13 @@ from utils.db_api.models import Wallet
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks
 
-from modules.camp_network.tasks.authorization import AuthClient
-from modules.camp_network.tasks.quests import QuestClient
-from modules.camp_network.tasks.twitter_camp import TwitterService
-from modules.camp_network.tasks.referral_manager import load_ref_codes, get_referral_code_for_registration
-from modules.camp_network.tasks.faucet import Faucet
-from modules.camp_network.tasks.onchain import CampOnchain
+from modules.tasks.authorization import AuthClient
+from modules.tasks.quests import QuestClient
+from modules.tasks.twitter_camp import TwitterService
+from modules.tasks.referral_manager import load_ref_codes, get_referral_code_for_registration
+from modules.tasks.faucet import Faucet
+from modules.tasks.onchain_client import CampOnchain
+# from modules.tasks.camp_tasks.specific_tasks_client import SpecificTaskCamp
 
 
 class CampNetworkClient:
@@ -33,6 +34,7 @@ class CampNetworkClient:
         self.twitter_client = TwitterService(user=user)
         self.faucet_client = Faucet(wallet=user)
         self.onchain_client = CampOnchain(wallet=user)
+        # self.specific_task_client = SpecificTaskCamp(wallet=user)
 
         # Quest IDs for easy access
         self.QUEST_IDS = self.quest_client.QUEST_IDS
@@ -110,7 +112,6 @@ class CampNetworkClient:
             auth_result = await self.login()
 
             if not auth_result[0]:  # Check success status
-                # If rate limit error received
                 if isinstance(auth_result[1], str) and auth_result[1] == "RATE_LIMIT":
                     logger.warning(
                         f"{self.user} account on hold due to rate limit"
@@ -123,9 +124,11 @@ class CampNetworkClient:
                 return {}
 
         # Execute all quests
-        return await self.quest_client.complete_all_quests(
+        quests = await self.quest_client.complete_all_quests(
             retry_failed=retry_failed, max_retries=max_retries
         )
+        await self.update_points()
+        return quests
 
     async def complete_twitter_quests(
         self):
@@ -157,7 +160,9 @@ class CampNetworkClient:
                 return {}
 
         # Execute all quests
-        return await self.twitter_client.complete_twitter_quests()
+        quests = await self.twitter_client.complete_twitter_quests()
+        await self.update_points()
+        return quests
 
     async def complete_twitter_and_regular_quests(self):
         if self.user.account_blocked:
@@ -166,6 +171,27 @@ class CampNetworkClient:
         await self.complete_all_quests()
         await self.complete_twitter_quests()
         return
+
+    async def update_points(self):
+        if self.user.account_blocked:
+            logger.warning(f"{self.user} account blocked")
+            return False
+        if not self.auth_client.user_id:
+            logger.info(f"{self.user} not authorized, performing authorization")
+            auth_result = await self.login()
+
+            if not auth_result[0]: 
+                if isinstance(auth_result[1], str) and auth_result[1] == "RATE_LIMIT":
+                    logger.warning(
+                        f"{self.user} account on hold due to rate limit"
+                    )
+                    return {"status": "RATE_LIMITED"}
+
+                logger.error(
+                    f"{self.user} failed to authorize, quest execution impossible"
+                )
+                return False
+        return await self.quest_client.get_and_update_points()
     
     async def complete_faucet(self):
         connect = await self.auth_client.check_connect()
@@ -188,7 +214,11 @@ class CampNetworkClient:
             return True
 
     async def complete_onchain(self):
+        if self.user.account_blocked:
+            logger.warning(f"{self.user} account blocked")
+            return {}
+
         faucet = await self.complete_faucet()
         if faucet:
-            return await self.onchain_client.handle_mint()
+            return await self.onchain_client.handle_actions()
 

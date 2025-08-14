@@ -1,0 +1,72 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "tokenId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "parentId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "creatorContentHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "string",
+                "name": "uri",
+                "type": "string"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "uint128",
+                        "name": "price",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint32",
+                        "name": "duration",
+                        "type": "uint32"
+                    },
+                    {
+                        "internalType": "uint16",
+                        "name": "royaltyBps",
+                        "type": "uint16"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "paymentToken",
+                        "type": "address"
+                    }
+                ],
+                "internalType": "structIpNFT.LicenseTerms",
+                "name": "licenseTerms",
+                "type": "tuple"
+            },
+            {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
+            }
+        ],
+        "name": "mintWithSignature",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

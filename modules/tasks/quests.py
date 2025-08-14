@@ -4,7 +4,7 @@ from typing import Dict, List
 from loguru import logger
 
 from data.settings import Settings
-from utils.db_api.wallet_api import get_completed_quests, mark_quest_completed, is_quest_completed
+from utils.db_api.wallet_api import get_completed_quests, mark_quest_completed, is_quest_completed, update_points
 from .http_client import BaseHttpClient
 
 
@@ -19,6 +19,13 @@ class QuestClient(BaseHttpClient):
     BASE_URL = "https://loyalty.campnetwork.xyz"
     COMPLETE_URL_TEMPLATE = f"{BASE_URL}/api/loyalty/rules/{{quest_id}}/complete"
     STATUS_URL = f"{BASE_URL}/api/loyalty/rules/status"
+    ACCOUNT_INFO_URL = f"{BASE_URL}/api/loyalty/accounts"
+    WEBSITE_ORGANIZATION_IDS = {
+        "websiteId": "32afc5c9-f0fb-4938-9572-775dee0b4a2b",
+        "organizationId": "26a1764f-5637-425e-89fa-2f3fb86e758c",
+    }
+
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,8 +56,7 @@ class QuestClient(BaseHttpClient):
 
         return {
             "userId": self.user_id,
-            "websiteId": "32afc5c9-f0fb-4938-9572-775dee0b4a2b",
-            "organizationId": "26a1764f-5637-425e-89fa-2f3fb86e758c",
+            **self.WEBSITE_ORGANIZATION_IDS
         }
 
     async def check_quests_status(self) -> Dict:
@@ -77,6 +83,29 @@ class QuestClient(BaseHttpClient):
         else:
             logger.error(f"{self.user} failed to retrieve quest status: {response}")
             return {}
+
+    async def get_account_info(self):
+        params = {
+            **self.WEBSITE_ORGANIZATION_IDS,
+            "limit": "1000",
+            "walletAddress": self.user.address
+        }
+        success, response = await self.request(url=self.ACCOUNT_INFO_URL, method="GET", params=params)
+
+        if type(response) is dict:
+            return response["data"][0] if (response["data"] and response["data"][0]) else {}
+        else:
+            return {}
+
+    async def get_and_update_points(self):
+        info = await self.get_account_info()
+        points = int(info.get("amount", 0))
+        logger.info(f"{self.user} have {points} points")
+        if points:
+            update_points(private_key=self.user.private_key, points=points)
+            return True
+        else:
+            return False
 
     async def get_db_completed_quests(self) -> List[str]:
         """
@@ -339,6 +368,7 @@ class QuestClient(BaseHttpClient):
                         results[quest_name] = success
 
         # Get final statistics
+        await self.get_and_update_points()
         completed = sum(1 for result in results.values() if result)
         logger.success(f"{self.user} completed {completed} out of {len(results)} quests")
 

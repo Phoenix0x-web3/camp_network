@@ -14,6 +14,7 @@ class Wallet(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     private_key: Mapped[str] = mapped_column(unique=True, index=True)
     address: Mapped[str] = mapped_column(unique=True)
+    points: Mapped[int] = mapped_column(default=0, nullable=True)
     proxy: Mapped[str] = mapped_column(default=None, nullable=True)
     proxy_status: Mapped[str] = mapped_column(default="OK", nullable=True)
     discord_token: Mapped[str] = mapped_column(default=None, nullable=True)

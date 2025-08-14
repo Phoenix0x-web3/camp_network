@@ -28,12 +28,15 @@ class Settings(Singleton):
         self.solvecaptcha_api_key = json_data.get("solvecaptcha_api_key", "")
         self.use_ref_code = json_data.get("use_ref_code", True)
         self.use_only_file_ref_code = json_data.get("use_only_file_ref_code", False)
-        self.resources_auto_replace = json_data.get("resources_auto_replace ", True)
+        self.auto_replace_proxy = json_data.get("auto_replace_proxy ", True)
+        self.auto_replace_twitter = json_data.get("auto_replace_twitter ", True)
         self.resources_max_failures = json_data.get("resources_max_failures", 3)
         self.onchain_actions = json_data.get("onchain_actions", [])
         self.multiple_actions = json_data.get("multiple_actions", True)
         self.use_faucet_if_balance = json_data.get("use_faucet_if_balance", False)
         self.quests_name_and_ids = json_data.get("quests_name_and_ids", {})
         self.quests_twitter = json_data.get("quests_twitter", {})
+        self.specific_actions = json_data.get("specific_actions", [])
+
 
 

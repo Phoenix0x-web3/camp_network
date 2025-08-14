@@ -22,6 +22,26 @@ def get_wallet_by_address(address: str, sqlite_query: bool = False) -> Wallet | 
 
     return db.one(Wallet, Wallet.address == address)
   
+def update_points(private_key: str, points: int | None) -> bool:
+    """
+    Updates the Points for a wallet with the given private_key.
+    
+    Args:
+        private_key: The private key of the wallet to update
+        points: The update points number
+    Returns:
+        bool: True if update was successful, False if wallet not found
+    """
+    if not points:
+        return False
+
+    wallet = db.one(Wallet, Wallet.private_key == private_key)
+    if not wallet:
+        return False
+    
+    wallet.points = points
+    db.commit()
+    return True
 
 def update_twitter_token(private_key: str, updated_token: str | None) -> bool:
     """
