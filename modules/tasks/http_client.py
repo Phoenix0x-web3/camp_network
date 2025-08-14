@@ -176,7 +176,7 @@ class BaseHttpClient:
         # Perform request with retries
         for attempt in range(retries):
             try:
-                logger.debug(request_kwargs)
+              #  logger.debug(request_kwargs)
                 method_func = getattr(self.browser, method.lower())
                 resp = await method_func(**request_kwargs)
 
