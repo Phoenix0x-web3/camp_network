@@ -17,6 +17,9 @@ shuffle_wallets: true
 # Hide wallet address in logs
 hide_wallet_address_log: true
 
+# the log level for the application. Options: DEBUG, INFO, WARNING, ERROR
+log_level : INFO
+
 # Random pause for start wallet in any modules
 random_pause_start_wallet:
   min: 0
