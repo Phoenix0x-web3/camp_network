@@ -123,6 +123,9 @@ quests_name_and_ids: {
         "PlenaTG":"332b56cd-d85d-41d1-87b9-d2200d5f994e",
         "PlenaDS":"757f9546-e431-4a8d-9934-a93b1dcf5bbe",
         "RemasterMarketPlace":"2109ea82-5cad-4c38-af6b-209db82188d2",
+        "RupturelabsTG": "760e5ae4-16a9-44a1-9e3f-cd6a62a76a10",
+        "RupturelabsDS": "c7f504bc-bb29-44a2-ac42-df9ce74bdf7b"
+        
     }
 #Twitter quests
 quests_twitter: {
