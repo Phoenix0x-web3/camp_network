@@ -76,9 +76,16 @@ onchain_actions: [
     "storychain",
 ]
 #Multiple actions for onchain. Example mint one type NFT > 1 times. 
-mulitple_actions: false
+mulitple_actions: False
 #Use faucet if wallet balance > 0
 use_faucet_if_balance: False
+#Use imap
+use_imap: False
+#Server for IMAP
+imap_server: imap.rambler.ru
+#Port for IMAP
+imap_port: 993
+
 #Name quest for logger. Ids quest for complete
 quests_name_and_ids: {
         "CampOrigin": "2585eb2f-7cac-45d1-88db-13608762bf17",

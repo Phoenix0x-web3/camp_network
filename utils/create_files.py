@@ -14,6 +14,7 @@ REQUIRED_FILES = [
     "reserve_twitter.txt",
     "reserve_proxy.txt",
     "ref_codes.txt",
+    "email_data.txt",
 ]
 
 def create_files() -> None:

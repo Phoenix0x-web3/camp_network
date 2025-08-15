@@ -74,6 +74,7 @@ class Import:
         proxies        = read_lines("proxy.txt")
         twitter_tokens = read_lines("twitter_tokens.txt")
         discord_tokens = read_lines("discord_tokens.txt")
+        email_data = read_lines("email_data.txt")
 
         if not private_keys or not proxies:
             raise ValueError("File private_keys.txt и proxy.txt must contain information")
@@ -95,6 +96,7 @@ class Import:
                 "proxy": parse_proxy(pick_proxy(i)),
                 "twitter_token": twitter_tokens[i] if i < len(twitter_tokens) else None,
                 "discord_token": discord_tokens[i] if i < len(discord_tokens) else None,
+                "email_data": email_data[i] if i < len(email_data) else None,
             })
 
         return wallets
@@ -149,6 +151,10 @@ class Import:
                     wallet_instance.discord_token = wl.discord_token
                     changed = True
 
+                if hasattr(wallet_instance, "email_data") and wallet_instance.email_data != wl.email_data:
+                    wallet_instance.email_data = wl.email_data
+                    changed = True
+
                 if changed:
                     db.commit()
                     edited.append(wallet_instance)
@@ -162,6 +168,7 @@ class Import:
                 proxy=wl.proxy,
                 twitter_token=wl.twitter_token,
                 discord_token=wl.discord_token,
+                email_data=wl.email_data,
             )
 
             remove_line_from_file(wl.private_key, "private_keys.txt")
@@ -190,6 +197,7 @@ class Sync:
         proxies        = read_lines("proxy.txt")
         twitter_tokens = read_lines("twitter_tokens.txt")
         discord_tokens = read_lines("discord_tokens.txt")
+        email_data = read_lines("email_data.txt")
         
         record_count = max(len(twitter_tokens), len(discord_tokens))
 
@@ -207,6 +215,7 @@ class Sync:
                 "proxy": parse_proxy(pick_proxy(i)),
                 "twitter_token": twitter_tokens[i] if i < len(twitter_tokens) else None,
                 "discord_token": discord_tokens[i] if i < len(discord_tokens) else None,
+                "email_data": email_data[i] if i < len(email_data) else None,
             })
 
         return wallets
@@ -260,6 +269,10 @@ class Sync:
                     wallet_instance.discord_token = wallet_data.discord_token
                     changed = True
 
+                if hasattr(wallet_instance, "email_data") and wallet_instance.email_data != wallet_data.email_data:
+                    wallet_instance.email_data = wallet_data.email_data
+                    changed = True
+
                 if changed:
                     db.commit()
                     edited.append(wallet_instance)
@@ -274,6 +287,7 @@ class Export:
         "proxy":         "exported_proxy.txt",
         "twitter_token": "exported_twitter_tokens.txt",
         "discord_token": "exported_discord_tokens.txt",
+        "email_data": "exported_email_data.txt",
     }
 
     @staticmethod
@@ -302,6 +316,7 @@ class Export:
             buf["proxy"].append(w.proxy or "")
             buf["twitter_token"].append(w.twitter_token or "")
             buf["discord_token"].append(w.discord_token or "")
+            buf["email_data"].append(w.email_data or "")
 
         for field, filename in Export._FILES.items():
             Export._write_lines(filename, buf[field])

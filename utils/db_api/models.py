@@ -20,6 +20,7 @@ class Wallet(Base):
     discord_token: Mapped[str] = mapped_column(default=None, nullable=True)
     twitter_token: Mapped[str] = mapped_column(default=None, nullable=True)
     twitter_status: Mapped[str] = mapped_column(default="OK", nullable=True)
+    email_data: Mapped[str] = mapped_column(default=None, nullable=True)
     completed_quests: Mapped[str] = mapped_column(nullable=True, default="")
     ref_code: Mapped[str] = mapped_column(nullable=True, default=None)
     account_blocked: Mapped[bool] = mapped_column(default=False, server_default=sa.false(), nullable=False)
