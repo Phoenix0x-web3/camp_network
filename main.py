@@ -23,6 +23,7 @@ PROJECT_ACTIONS =   [
                     "Complete Onchain and Faucet",
                     "Complete Faucet",
                     "Update Points",
+                    "Show Statistics",
                     "Back"
                     ]
 
@@ -98,6 +99,9 @@ async def choose_action():
 
     elif action == "Update Points":
         await activity(action=6)
+    elif action == "Show Statistics":
+        await activity(action=7)   
+        
 
     elif action == "Exit":
         console.print(f"[bold red]Exiting {PROJECT}...[/bold red]")

@@ -34,3 +34,7 @@ class Controller:
     @controller_log('Update Points')
     async def update_points(self):
         return await self.camp_client.update_points()
+    @controller_log('Show Statistics')
+    async def show_statistics(self):
+        return await self.camp_client.show_statistics()
+    

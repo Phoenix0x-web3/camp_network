@@ -60,6 +60,8 @@ async def activity(action: int):
         await execute(wallets, complete_faucet)
     elif action == 6:
         await execute(wallets, update_points)
+    elif action == 7:
+        await execute(wallets, show_statistics)
 
 async def random_sleep_before_start(wallet):
     random_sleep = random.randint(Settings().random_pause_start_wallet_min, Settings().random_pause_start_wallet_max)
@@ -114,3 +116,10 @@ async def update_points(wallet):
 
     await controller.update_points()
 
+async def show_statistics(wallet):
+    await random_sleep_before_start(wallet=wallet)
+    client = Client(private_key=wallet.private_key, proxy=wallet.proxy, network=Networks.Camp)
+
+    controller = Controller(client=client, wallet=wallet)
+
+    await controller.show_statistics()
