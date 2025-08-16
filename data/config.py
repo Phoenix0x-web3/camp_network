@@ -19,22 +19,26 @@ else:
 
 FILES_DIR = os.path.join(ROOT_DIR, 'files')
 WALLETS_DB = os.path.join(FILES_DIR, 'wallets.db')
-SETTINGS_FILE = os.path.join(FILES_DIR, 'settings.yaml') 
+SETTINGS_FILE = os.path.join(FILES_DIR, 'settings.yaml')
+
 TEMPLATE_SETTINGS_FILE = os.path.join(ROOT_DIR, 'utils', 'settings_template.yaml') 
-RESERVE_PROXY_FILE = os.path.join(FILES_DIR, 'reserve_proxy.txt')  
-RESERVE_TWITTER_FILE = os.path.join(FILES_DIR, 'reserve_twitter.txt')  
-REF_CODES_FILE=os.path.join(FILES_DIR, 'ref_codes.txt')  
 ABIS_DIR = os.path.join(ROOT_DIR, 'data', 'abis')
-
-
 
 SALT_PATH = os.path.join(FILES_DIR, 'salt.dat')
 
 CIPHER_SUITE = None
 LOCK = asyncio.Lock()
 
+
+# Configure the logger based on the settings
+from data.settings import Settings 
+settings = Settings()
 LOGS_DIR = os.path.join(FILES_DIR, 'logs')
 LOG_FILE = os.path.join(LOGS_DIR, 'log.log')
-ERRORS_FILE = os.path.join(LOGS_DIR, 'errors.log')
-logger.add(ERRORS_FILE, level='ERROR')
-logger.add(LOG_FILE, level='INFO')
+
+if settings.log_level not in ["DEBUG", "INFO", "WARNING", "ERROR"]:
+    raise ValueError(f"Invalid log level: {settings.log_level}. Must be one of: DEBUG, INFO, WARNING, ERROR")
+logger.remove()  # Remove the default logger
+logger.add(sys.stderr, level=settings.log_level)
+
+logger.add(LOG_FILE, level="DEBUG")
