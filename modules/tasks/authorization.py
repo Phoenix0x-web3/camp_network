@@ -356,7 +356,8 @@ class AuthClient(BaseHttpClient):
     async def get_email_info(self):
         if self.user_info:
             email_connect = self.user_info["userMetadata"][0]["emailAddress"]
-            if email_connect:
+            email_verifed = self.user_info["userMetadata"][0]["emailVerifiedAt"]
+            if email_connect and email_verifed:
                 return True
         return False
 
@@ -416,14 +417,16 @@ class AuthClient(BaseHttpClient):
 
         try:
             mail_waiter = Mail(mail_data=self.user.email_data)
+            if not mail_waiter.authed:
+                return False
             email_login = mail_waiter.mail_login 
 
             if not await self.request_email_code(email=email_login):
                 return False
 
-            mail_body = await asyncio.to_thread(mail_waiter.find_mail,  
-                msg_from=["Snag Solutions <accounts@snagsolutions.io>"],
-                subject="Verify email - Climb to the Summit marketplace",
+            mail_body = await mail_waiter.find_mail(
+                msg_from=["Snag Solutions <accounts@snagsolutions.io>", "snagsolutions.io", "accounts@snagsolutions.io"],
+                part_subject="Verify email - Climb to the Summit marketplace",
             )
 
             verify_link = mail_body.find('a')["href"].replace("http://", "https://")

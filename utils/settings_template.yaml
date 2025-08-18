@@ -74,6 +74,8 @@ onchain_actions: [
     "copass",
     "mysphere",
     "storychain",
+    "awana",
+    "panenka",
 ]
 #Multiple actions for onchain. Example mint one type NFT > 1 times. 
 mulitple_actions: False
@@ -145,7 +147,6 @@ quests_twitter: {
             "WEARETRaiLHEADS": "deadebb4-dc7e-4c49-b852-9f533ff84961",
             "ativ_official":"90d9fe50-75b5-4168-be7d-088eea19a566",
             "chainbills_xyz":"8f41af8b-938f-46d9-a67a-2f00f4749ac9",
-            "rgbclash_xyz":"d507bf9f-55d2-4c10-b3a1-0e6d256dd5de",
             "PlayFlappyTrump":"5967d66d-1efa-477a-951e-fb112bd76489",
             "0xhighnoon": "108bd991-fcbf-4653-a947-90f401ad8fb7",
             "relicquest":"eab0fcc5-a0a3-46e5-9d04-4e1187e8ff35",

@@ -24,6 +24,9 @@ async def execute(wallets : Wallet, task_func, timeout_hours : int = 0):
         async def sem_task(wallet : Wallet):
             async with semaphore:
                 try:
+                    if wallet.account_blocked:
+                        logger.warning(f"{wallet} account blocked")
+                        return False
                     await task_func(wallet)
                 except Exception as e:
                     logger.error(f"[{wallet.id}] failed: {e}")

@@ -1,9 +1,9 @@
+import asyncio
 from imaplib import IMAP4_SSL, IMAP4
 from bs4 import BeautifulSoup
-from time import sleep, time
+from time import time
 from loguru import logger
 from email import message_from_bytes
-from email.utils import parsedate_to_datetime
 from typing import Union, List
 
 from data.settings import Settings
@@ -14,13 +14,16 @@ class MailTimedOut(Exception):
 
 class Mail:
     def __init__(self, mail_data: str):
-        """Initialize Mail with login credentials."""
+        """Initialize Mail with login credentials if provided."""
         self.mail_data = mail_data
         self.authed = False
         self.imap = None
-
-        try:
+        self.fake_mail = None
+        if "icloud" in mail_data:
+            self.mail_login, self.mail_pass, self.fake_mail = mail_data.split(':')
+        else:
             self.mail_login, self.mail_pass = mail_data.split(':', 1)
+        try:
             self._login(only_check=True)
         except ValueError as e:
             logger.error(f"Invalid mail_data format: {e}")
@@ -39,13 +42,13 @@ class Mail:
             else:
                 raise Exception(f"Email login failed for {self.mail_login}: {error_msg}")
 
-    def find_mail(
+    async def find_mail(
         self,
         msg_from: Union[str, List[str]],
         subject: str | None = None,
         part_subject: str | None = None,
     ) -> BeautifulSoup:
-        """Search for an email matching the criteria."""
+        """Search for an email matching the criteria asynchronously."""
         if isinstance(msg_from, str):
             msg_from = [msg_from]
 
@@ -53,38 +56,40 @@ class Mail:
         start_time = time()
         first = True
         if not self.imap:
-            raise
+            raise Exception("IMAP connection not established")
 
         while time() < start_time + 180:
             try:
-                # Select INBOX and get the latest email ID
+                await asyncio.sleep(5)
                 _, mailbox_data = self.imap.select('INBOX')
-                last_mail_id = mailbox_data[0].decode()
+                last_mail_id = mailbox_data[0]
+                if isinstance(last_mail_id, int):
+                    last_mail_id = last_mail_id.decode()
 
                 if last_mail_id == "0":
                     msg = None
                 else:
-                    _, data = self.imap.fetch(last_mail_id, "(RFC822)")
+                    _, data = self.imap.fetch(last_mail_id, "(BODY.PEEK[])")
+                    # _, data = self.imap.fetch(last_mail_id, "(RFC822)")
                     raw_email = data[0][1]
                     msg = message_from_bytes(raw_email)
 
                 if (
                     msg and
                     msg["From"] in msg_from and
+                    (not self.fake_mail or msg["To"] == self.fake_mail) and
                     (not subject or msg["Subject"] == subject) and
-                    (not part_subject or part_subject in (msg["Subject"] or "")) and
-                    parsedate_to_datetime(msg["Date"]).timestamp() > start_time - 5
+                    (not part_subject or part_subject in (msg["Subject"] or "")) 
                 ):
                     return self._format_mail(msg)
 
                 if first:
                     logger.info(f"Waiting for mail from {', '.join(msg_from)}")
                     first = False
-                sleep(5)
 
             except Exception as e:
                 logger.error(f"Error while fetching email: {e}")
-                sleep(5)  # Prevent rapid error looping
+                await asyncio.sleep(5)
 
         raise MailTimedOut(f"Timeout waiting for email from {', '.join(msg_from)}")
 

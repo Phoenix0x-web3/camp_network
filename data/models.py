@@ -108,3 +108,20 @@ class Contracts(Singleton):
         address="0x1eD74B27f846C699A90926daD057A7f6FD22C126",
         abi=read_json(path=(ABIS_DIR, "mysphere.json"))
     )
+    MYSTERY_BOXES_TOKEN_TAILS = [
+        RawContract(
+            title="CAMP_1",
+            address="0xa0D4687483F049c53e6EC8cBCbc0332C74180168",
+            abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
+        ),
+        RawContract(
+            title="CAMP_2",
+            address="0x0A65888A4F76D821A3148620866BC65A5db599BB",
+            abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
+        ),
+        RawContract(
+            title="CAMP_3",
+            address="0xec735A2Ba32703215b3e40d669C61FBd849b422a",
+            abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
+        ),
+    ]

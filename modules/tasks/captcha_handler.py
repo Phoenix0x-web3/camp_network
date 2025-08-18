@@ -248,3 +248,99 @@ class CloudflareHandler:
             return cf_clearance
         else:
             return None
+
+    async def get_recaptcha_task_panenka(self) -> Optional[int]:
+        """
+        Create task for solving Cloudflare Turnstile in CapMonster
+
+        Args:
+            html: HTML page with captcha
+
+        Returns:
+            Task ID or None in case of error
+        """
+        try:
+            # Parse proxy
+            ip, port, login, password = await self.parse_proxy()
+
+
+            # Data for CapMonster request
+            json_data = {
+                "clientKey": Settings().capmonster_api_key,
+                "task": {
+                    "type": "TurnstileTaskProxyless",
+                    "websiteURL": "https://panenkafc.gg/",
+                    "websiteKey": "0x4AAAAAABh8fBw-gFrcIbzt",
+                }
+            }
+
+            # Add proxy data if available
+            if ip and port:
+                json_data["task"].update({
+                    "proxyType": "http",
+                    "proxyAddress": ip,
+                    "proxyPort": port
+                })
+
+                if login and password:
+                    json_data["task"].update({
+                        "proxyLogin": login,
+                        "proxyPassword": password
+                    })
+
+            # Create new session and make request
+            resp = await self.browser.post(
+                url='https://api.capmonster.cloud/createTask',
+                json=json_data,
+            )
+
+            if resp.status_code == 200:
+                result = resp.text
+                result = json.loads(result)
+                if result.get('errorId') == 0:
+                    logger.info(f"{self.browser.wallet} created task in CapMonster: {result['taskId']}")
+                    return result['taskId']
+                else:
+                    logger.error(f"{self.browser.wallet} CapMonster error: {result.get('errorDescription', 'Unknown error')}")
+                    return None
+            else:
+                logger.error(f"{self.browser.wallet} CapMonster request error: {resp.status_code}")
+                return None
+
+        except Exception as e:
+            logger.error(f"{self.browser.wallet} error creating task in CapMonster: {str(e)}")
+            return None
+
+    async def panenka_handle(self,) -> Optional[str]:
+        max_retry = 10
+        captcha_token = None
+
+        if not Settings().actual_ua:
+            raise Exception("Insert CapMonster Api Key to files/settings.yaml")
+
+        for i in range(max_retry):
+            try:
+                # Get task for solving Turnstile
+                task = await self.get_recaptcha_task_panenka()
+                if not task:
+                    logger.error(f"{self.browser.wallet} failed to create task in CapMonster, attempt {i+1}/{max_retry}")
+                    await asyncio.sleep(2)
+                    continue
+
+                # Get task result
+                result = await self.get_recaptcha_token(task_id=task)
+                if result:
+                    captcha_token = result
+                    logger.success(f"{self.browser.wallet} successfully obtained captcha token")
+                    break
+                else:
+                    logger.warning(f"{self.browser.wallet} failed to get token, attempt {i+1}/{max_retry}")
+                    await asyncio.sleep(3)
+                    continue
+
+            except Exception as e:
+                logger.error(f"{self.browser.wallet} error handling captcha: {str(e)}")
+                await asyncio.sleep(3)
+                continue
+
+        return captcha_token
