@@ -18,6 +18,7 @@ console = Console()
 PROJECT = 'Camp Network'
 
 PROJECT_ACTIONS =   [
+                    "Complete All Quests and Onchain Actions",
                     "Complete Twitter and Regular Quests",
                     "Complete Regular Quests",
                     "Complete Twitter Quests", 
@@ -82,23 +83,26 @@ async def choose_action():
         check_encrypt_param()
         await Export.wallets_to_txt()
 
-    elif action == "Complete Twitter and Regular Quests":
+    elif action == "Complete All Quests and Onchain Actions":
         await activity(action=1)
 
-    elif action == "Complete Regular Quests":
+    elif action == "Complete Twitter and Regular Quests":
         await activity(action=2)
 
-    elif action == "Complete Twitter Quests":
+    elif action == "Complete Regular Quests":
         await activity(action=3)
 
-    elif action == "Complete Onchain and Faucet":
+    elif action == "Complete Twitter Quests":
         await activity(action=4)
 
-    elif action == "Complete Faucet":
+    elif action == "Complete Onchain and Faucet":
         await activity(action=5)
 
-    elif action == "Update Points":
+    elif action == "Complete Faucet":
         await activity(action=6)
+
+    elif action == "Update Points":
+        await activity(action=7)
 
     elif action == "Exit":
         console.print(f"[bold red]Exiting {PROJECT}...[/bold red]")

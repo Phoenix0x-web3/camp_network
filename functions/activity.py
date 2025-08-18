@@ -52,22 +52,32 @@ async def activity(action: int):
         wallets = all_wallets
 
     if action == 1:
-        await execute(wallets, complete_all_quests)
+        await execute(wallets, complete_all_actions)
     elif action == 2:
-        await execute(wallets, complete_regular_quests)
+        await execute(wallets, complete_all_quests)
     elif action == 3:
-        await execute(wallets, complete_twitter_quests)
+        await execute(wallets, complete_regular_quests)
     elif action == 4:
-        await execute(wallets, complete_onchain)
+        await execute(wallets, complete_twitter_quests)
     elif action == 5:
-        await execute(wallets, complete_faucet)
+        await execute(wallets, complete_onchain)
     elif action == 6:
+        await execute(wallets, complete_faucet)
+    elif action == 7:
         await execute(wallets, update_points)
 
 async def random_sleep_before_start(wallet):
     random_sleep = random.randint(Settings().random_pause_start_wallet_min, Settings().random_pause_start_wallet_max)
     logger.info(f"{wallet} sleep {random_sleep} seconds before start actions")
     await asyncio.sleep(random_sleep)
+
+async def complete_all_actions(wallet):
+    await random_sleep_before_start(wallet=wallet)
+    client = Client(private_key=wallet.private_key, proxy=wallet.proxy, network=Networks.Camp)
+
+    controller = Controller(client=client, wallet=wallet)
+
+    await controller.complete_quests_and_onchain()
 
 async def complete_all_quests(wallet):
     await random_sleep_before_start(wallet=wallet)

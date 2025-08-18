@@ -154,6 +154,12 @@ class CampNetworkClient:
         await self.complete_all_quests()
         await self.complete_twitter_quests()
         return
+    
+    async def complete_all_actions(self):
+        await self.complete_all_quests()
+        await self.complete_twitter_quests()
+        await self.complete_onchain()
+        return
 
     async def update_points(self):
         if not self.auth_client.user_id:

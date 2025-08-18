@@ -16,6 +16,9 @@ class Controller:
         self.base = Base(client=client, wallet=wallet)
         self.camp_client = CampNetworkClient(user=wallet)
 
+    @controller_log('Complete All Actions')
+    async def complete_quests_and_onchain(self):
+        return await self.camp_client.complete_all_actions()
     @controller_log('Twitter and Regular Quests')
     async def complete_tw_and_regular_quests(self):
         return await self.camp_client.complete_twitter_and_regular_quests()
