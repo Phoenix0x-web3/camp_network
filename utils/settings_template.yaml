@@ -78,7 +78,7 @@ onchain_actions: [
     "panenka",
 ]
 #Multiple actions for onchain. Example mint one type NFT > 1 times. 
-mulitple_actions: False
+multiple_actions: False
 #Use faucet if wallet balance > 0
 use_faucet_if_balance: False
 #Use imap
