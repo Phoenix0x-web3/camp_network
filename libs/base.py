@@ -159,7 +159,7 @@ class Base:
                     return False
             except BaseException:
                 if time.time() - start_time > max_wait_time:
-                    logger.exception(f'{self.client.account.address} получил неудачную транзакцию')
+                    logger.exception(f'{self.wallet} get unsuccessful transaction')
                     return False
                 await asyncio.sleep(3)
 
@@ -287,7 +287,7 @@ class Base:
                         raise Exception("Transaction reverted")
 
                     logger.success(
-                        f"{self.client.account.address} transaction confirmed: {tx.hash.hex() if tx.hash else 0}"
+                        f"{self.wallet} transaction confirmed: {tx.hash.hex() if tx.hash else 0}"
                     )
 
                     return TransactionResult(
