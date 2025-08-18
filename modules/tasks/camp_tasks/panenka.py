@@ -39,10 +39,9 @@ class Panenka(Base):
         login_result = await self.panenka_login(login=self.mail_waiter.mail_login, password=password)
         if login_result:
             logger.info(f"{self.wallet} Successfully logged in to Panenka")
-            connect = await self.panenka_connect_wallet()
-            if connect:
-                logger.info(f"{self.wallet} Successfully connect wallet in to Panenka")
-                return True
+            await self.panenka_connect_wallet()
+            logger.info(f"{self.wallet} Successfully connect wallet in to Panenka")
+            return True
 
         already_registered = await self.panenka_register(login=self.mail_waiter.mail_login, password=password)
         if already_registered:
@@ -50,10 +49,9 @@ class Panenka(Base):
             login_result = await self.panenka_login(login=self.mail_waiter.mail_login, password=password)
             if login_result:
                 logger.info(f"{self.wallet} Successfully logged in to Panenka after registration")
-                connect = await self.panenka_connect_wallet()
-                if connect:
-                    logger.info(f"{self.wallet} Successfully connect wallet in to Panenka")
-                    return True
+                await self.panenka_connect_wallet()
+                logger.info(f"{self.wallet} Successfully connect wallet in to Panenka")
+                return True
             logger.error(f"{self.wallet} Failed to login after registration")
             return False
 
@@ -74,10 +72,8 @@ class Panenka(Base):
                 return False
             logger.info(f"{self.wallet} Successfully verified and registered Panenka account")
 
-        connect = await self.panenka_connect_wallet()
-        if connect:
-            logger.info(f"{self.wallet} Successfully connect wallet in to Panenka")
-            return True
+        await self.panenka_connect_wallet()
+        logger.info(f"{self.wallet} Successfully connect wallet in to Panenka")
         return True
 
     @async_retry()
