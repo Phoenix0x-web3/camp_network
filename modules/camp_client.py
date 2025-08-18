@@ -156,9 +156,14 @@ class CampNetworkClient:
         return
     
     async def complete_all_actions(self):
-        await self.complete_all_quests()
-        await self.complete_twitter_quests()
-        await self.complete_onchain()
+        functions = [
+            self.complete_all_quests,
+            self.complete_twitter_quests,
+            self.complete_onchain
+        ]
+        random.shuffle(functions)
+        for func in functions:
+            await func()
         return
 
     async def update_points(self):
