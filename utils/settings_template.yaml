@@ -83,7 +83,8 @@ mulitple_actions: False
 use_faucet_if_balance: False
 #Use imap
 use_imap: False
-#Server for IMAP
+#Server for IMAP support rambler and icloud
+#For icloud use imap.mail.me.com
 imap_server: imap.rambler.ru
 #Port for IMAP
 imap_port: 993
