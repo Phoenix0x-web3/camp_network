@@ -43,6 +43,14 @@ async def execute(wallets : Wallet, task_func, timeout_hours : int = 0):
 async def activity(action: int):
     check_encrypt_param()
 
+    try:
+        check_password_wallet = db.one(Wallet, Wallet.id == 1)
+        client = Client(private_key=check_password_wallet.private_key)
+
+    except Exception as e:
+        logger.error(f"Decryption Failed | Wrong Password")
+        return
+    
     all_wallets = db.all(Wallet)
 
     # Filter wallets if EXACT_WALLETS_TO_USE is defined
