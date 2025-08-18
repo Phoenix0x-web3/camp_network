@@ -13,7 +13,6 @@ from modules.tasks.twitter_camp import TwitterService
 from modules.tasks.referral_manager import load_ref_codes, get_referral_code_for_registration
 from modules.tasks.faucet import Faucet
 from modules.tasks.onchain_client import CampOnchain
-# from modules.tasks.camp_tasks.specific_tasks_client import SpecificTaskCamp
 
 
 class CampNetworkClient:
@@ -34,7 +33,6 @@ class CampNetworkClient:
         self.twitter_client = TwitterService(user=user)
         self.faucet_client = Faucet(wallet=user)
         self.onchain_client = CampOnchain(wallet=user)
-        # self.specific_task_client = SpecificTaskCamp(wallet=user)
 
         # Quest IDs for easy access
         self.QUEST_IDS = self.quest_client.QUEST_IDS
@@ -69,13 +67,11 @@ class CampNetworkClient:
                 referral_code = await get_referral_code_for_registration(
                 )
 
-        # Perform authorization with referral code
         success, response = await self.auth_client.login_with_referral(
             referral_code=referral_code
         )
 
         if success:
-            # If authorization is successful, pass cookies and user ID to quest client
             self.quest_client.cookies = self.auth_client.cookies
             self.quest_client.set_user_id(self.auth_client.user_id)
             self.twitter_client.cookies = self.auth_client.cookies
@@ -96,11 +92,6 @@ class CampNetworkClient:
         Returns:
             Results of quest completion
         """
-        # Check if authorized
-        if self.user.account_blocked:
-            logger.warning(f"{self.user} account blocked")
-            return {}
-
         incomplete_quests = await self.quest_client.get_incomplete_quests()
 
         if not incomplete_quests:
@@ -132,11 +123,6 @@ class CampNetworkClient:
 
     async def complete_twitter_quests(
         self):
-        # Check if authorized
-        if self.user.account_blocked:
-            logger.warning(f"{self.user} account blocked")
-            return {}
-
         incomplete_quests = await self.twitter_client.get_incomplete_quests()
 
         if not incomplete_quests:
@@ -165,17 +151,22 @@ class CampNetworkClient:
         return quests
 
     async def complete_twitter_and_regular_quests(self):
-        if self.user.account_blocked:
-            logger.warning(f"{self.user} account blocked")
-            return False
         await self.complete_all_quests()
         await self.complete_twitter_quests()
         return
+    
+    async def complete_all_actions(self):
+        functions = [
+            self.complete_all_quests,
+            self.complete_twitter_quests,
+            self.complete_onchain
+        ]
+        random.shuffle(functions)
+        for func in functions:
+            await func()
+        return
 
     async def update_points(self):
-        if self.user.account_blocked:
-            logger.warning(f"{self.user} account blocked")
-            return False
         if not self.auth_client.user_id:
             logger.info(f"{self.user} not authorized, performing authorization")
             auth_result = await self.login()
@@ -214,10 +205,6 @@ class CampNetworkClient:
             return True
 
     async def complete_onchain(self):
-        if self.user.account_blocked:
-            logger.warning(f"{self.user} account blocked")
-            return {}
-
         faucet = await self.complete_faucet()
         if faucet:
             return await self.onchain_client.handle_actions()

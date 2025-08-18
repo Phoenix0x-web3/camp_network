@@ -104,3 +104,40 @@ def check_encrypt_param(confirm: bool = False, attempts: int = 3):
             return set_cipher_suite(pwd1)
 
         raise RuntimeError("Password confirmation failed – too many attempts.")
+
+def format_password(password: str):
+    import string
+    # ADD UPPER CASE
+    if not any([password_symbol in string.ascii_uppercase for password_symbol in password]):
+        first_letter = next(
+            (symbol for symbol in password if symbol in string.ascii_letters),
+            "i"
+        )
+        password += first_letter.upper()
+
+    # add lower case
+    if not any([password_symbol in string.ascii_lowercase for password_symbol in password]):
+        first_letter = next(
+            (symbol for symbol in password if symbol in string.ascii_letters),
+            "f"
+        )
+        password += first_letter.lower()
+
+    # add numb3r5
+    if not any([password_symbol in string.digits for password_symbol in password]):
+        password += str(len(password))[0]
+
+    # add $ymbol$
+    symbols_list = '!"#$%&\'()*+,-./:;<=>?@[]^_`{|}~'
+    if not any([password_symbol in symbols_list for password_symbol in password]):
+        password += symbols_list[sum(ord(c) for c in password) % len(symbols_list)]
+
+    # add 8 characters
+    if len(password) < 8:
+        all_symbols = string.digits + string.ascii_letters
+        password += ''.join(
+            all_symbols[sum(ord(c) for c in password[:i+1]) % len(symbols_list)]
+            for i in range(max(0, 8 - len(password)))
+        )
+
+    return password

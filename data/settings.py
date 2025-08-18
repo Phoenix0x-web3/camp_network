@@ -39,6 +39,9 @@ class Settings(Singleton):
         self.use_faucet_if_balance = json_data.get("use_faucet_if_balance", False)
         self.quests_name_and_ids = json_data.get("quests_name_and_ids", {})
         self.quests_twitter = json_data.get("quests_twitter", {})
+        self.use_imap = json_data.get("use_imap", False)
+        self.imap_server = json_data.get("imap_server", "")
+        self.imap_port = json_data.get("imap_port", "")
 
 # Configure the logger based on the settings
 settings = Settings()

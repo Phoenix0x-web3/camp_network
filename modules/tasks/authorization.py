@@ -6,8 +6,10 @@ from typing import Dict, Optional, Tuple
 from loguru import logger
 from eth_account.messages import encode_defunct
 
+from data.settings import Settings
 from libs.eth_async.client import Client
 from utils.db_api.wallet_api import update_ref_code
+from utils.imap import Mail
 from .http_client import BaseHttpClient
 from .resource_manager import ResourceManager
 
@@ -21,6 +23,7 @@ class AuthClient(BaseHttpClient):
     AUTH_CALLBACK_URL = f"{BASE_URL}/api/auth/callback/credentials"
     AUTH_SESSION_URL = f"{BASE_URL}/api/auth/session"
     AUTH_SIGNOUT_URL = f"{BASE_URL}/api/auth/signout"
+    USER_INFO_URL = f"{BASE_URL}/api/users"
     DYNAMIC_CONNECT_URL = "https://app.dynamicauth.com/api/v0/sdk/09a766ae-a662-4d96-904a-28d1c9e4b587/connect"
     DYNAMIC_NONCE_URL = "https://app.dynamicauth.com/api/v0/sdk/09a766ae-a662-4d96-904a-28d1c9e4b587/nonce"
 
@@ -34,6 +37,7 @@ class AuthClient(BaseHttpClient):
         self.nonce = None
         self.session_data = None
         self.user_id = None
+        self.user_info = None
 
     async def initial_request(self) -> bool:
         """
@@ -317,6 +321,139 @@ class AuthClient(BaseHttpClient):
             )
             return False
 
+    async def get_user_info(self):
+        headers = await self.get_headers(
+            {
+                "Content-Type": "application/json",
+                "Referer": "https://loyalty.campnetwork.xyz/home",
+                "Sec-Fetch-Site": "same-origin",
+            }
+        )
+        params = {
+            'includeDelegation': 'false',
+            'walletAddress': f'{self.client.account.address}',
+            'websiteId': '32afc5c9-f0fb-4938-9572-775dee0b4a2b',
+            'organizationId': '26a1764f-5637-425e-89fa-2f3fb86e758c'
+        }
+
+        success, response = await self.request(
+            url=self.USER_INFO_URL, method="GET", headers=headers, params=params
+        )
+
+        if (
+            success
+            and isinstance(response, dict)
+            and "userMetadata" in response["data"][0]
+        ):
+            self.user_info = response["data"][0]
+            return True
+        else:
+            logger.error(
+                f"{self.user} failed to retrieve user info: {response}"
+            )
+            return False
+
+    async def get_email_info(self):
+        if self.user_info:
+            email_connect = self.user_info["userMetadata"][0]["emailAddress"]
+            email_verifed = self.user_info["userMetadata"][0]["emailVerifiedAt"]
+            if email_connect and email_verifed:
+                return True
+        return False
+
+    async def request_email_code(self, email: str) -> bool:
+        """
+        Request email verification code
+
+        Args:
+            email: Email address to verify
+
+        Returns:
+            Success status
+        """
+        if not self.user_id:
+            logger.error(f"{self.user} attempting to request email code without user ID")
+            return False
+
+        try:
+            url = f"{self.BASE_URL}/api/users/{self.user_id}"
+            json_data = {"emailAddress": email}
+
+            headers = await self.get_headers({
+                "Content-Type": "application/json",
+                "Origin": "https://loyalty.campnetwork.xyz",
+            })
+
+            success, response = await self.request(
+                url=url,
+                method="POST",
+                json_data=json_data,
+                headers=headers,
+            )
+
+            if success and isinstance(response, dict) and response.get("success") is True:
+                logger.info(f"{self.user} successfully requested email verification code for {email}")
+                return True
+            else:
+                logger.error(f"{self.user} failed to request email code: {response}")
+                return False
+
+        except Exception as e:
+            logger.error(f"{self.user} error requesting email code: {str(e)}")
+            return False
+
+    async def connect_email(self) -> bool:
+        """
+        Connect and verify email if not already connected
+
+        Returns:
+            Success status
+        """
+        if not self.user_info:
+            if not await self.get_user_info():
+                return False
+        if await self.get_email_info() or not self.user.email_data:
+            return False
+
+        try:
+            mail_waiter = Mail(mail_data=self.user.email_data)
+            if not mail_waiter.authed:
+                return False
+            email_login = mail_waiter.mail_login 
+
+            if not await self.request_email_code(email=email_login):
+                return False
+
+            mail_body = await mail_waiter.find_mail(
+                msg_from=["Snag Solutions <accounts@snagsolutions.io>", "snagsolutions.io", "accounts@snagsolutions.io"],
+                part_subject="Verify email - Climb to the Summit marketplace",
+            )
+
+            verify_link = mail_body.find('a')["href"].replace("http://", "https://")
+            logger.info(f"{self.user} extracted verification link: {verify_link[:50]}...")
+
+            headers = await self.get_headers({
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Referer": "https://loyalty.campnetwork.xyz/",
+            })
+
+            success, response = await self.request(
+                url=verify_link,
+                method="GET",
+                headers=headers,
+            )
+
+            if success:
+                logger.success(f"{self.user} email {email_login} successfully connected and verified")
+                return True
+            else:
+                logger.error(f"{self.user} failed to verify email: {response}")
+                return False
+
+        except Exception as e:
+            logger.error(f"{self.user} error connecting email: {str(e)}")
+            return False
+
     async def login(self):
         """
         Complete authentication process with rate limit handling
@@ -363,6 +500,9 @@ class AuthClient(BaseHttpClient):
             # Step 6: Retrieve session info
             if not await self.get_session_info():
                 return False, "None"
+
+            if Settings().use_imap:
+                await self.connect_email()
 
             return True, "None"
 

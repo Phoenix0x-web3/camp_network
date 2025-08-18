@@ -7,4 +7,4 @@ from loguru import logger
 from utils.db_api.db import DB
 
 db = DB("sqlite:///files/wallets.db")
-db.add_column_to_table("wallets", "points", "INT", 0)
+db.add_column_to_table("wallets", "email_data", "STRING", None)
