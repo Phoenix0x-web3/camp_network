@@ -19,6 +19,9 @@ WALLETS_DB = os.path.join(FILES_DIR, 'wallets.db')
 SETTINGS_FILE = os.path.join(FILES_DIR, 'settings.yaml')
 
 TEMPLATE_SETTINGS_FILE = os.path.join(ROOT_DIR, 'utils', 'settings_template.yaml') 
+RESERVE_PROXY_FILE = os.path.join(FILES_DIR, 'reserve_proxy.txt')  
+RESERVE_TWITTER_FILE = os.path.join(FILES_DIR, 'reserve_twitter.txt')  
+REF_CODES_FILE=os.path.join(FILES_DIR, 'ref_codes.txt')  
 ABIS_DIR = os.path.join(ROOT_DIR, 'data', 'abis')
 
 SALT_PATH = os.path.join(FILES_DIR, 'salt.dat')
