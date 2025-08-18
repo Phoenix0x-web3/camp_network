@@ -41,7 +41,7 @@ class Panenka(Base):
             logger.info(f"{self.wallet} Successfully logged in to Panenka")
             await self.panenka_connect_wallet()
             logger.info(f"{self.wallet} Successfully connect wallet in to Panenka")
-            return True
+            return False
 
         already_registered = await self.panenka_register(login=self.mail_waiter.mail_login, password=password)
         if already_registered:

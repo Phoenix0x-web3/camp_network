@@ -51,6 +51,8 @@ class CampOnchain(Base):
         tavern_quest_contract = await self.client.contracts.get(contract_address=Contracts.TAVERN_QUEST)
         tavern_quest_max_mint = 1
         mintpad_contract = await self.client.contracts.get(contract_address=Contracts.MINT_PAD)
+        mintpad_contract_check = await self.client.contracts.get(contract_address=Contracts.MINT_PAD_CHECK)
+        mintpad_max_mint = 50
 
         for action in actual_actions:
             try:
@@ -172,13 +174,13 @@ class CampOnchain(Base):
                     else:
                         continue
                 elif action == "mintpad":
-                    # need_mint, quantity = await self.mint_funcs.need_mint_and_quantity(
-                    #     contract=mintpad_contract, max_mint=mintpad_max_mint, action=action
-                    # )
-                    # if need_mint and quantity:
-                    await self.mint_funcs.mintpad_mint(contract=mintpad_contract)
-                    # else:
-                    #     continue
+                    need_mint, quantity = await self.mint_funcs.need_mint_and_quantity(
+                        contract=mintpad_contract_check, max_mint=mintpad_max_mint, action=action
+                    )
+                    if need_mint and quantity:
+                        await self.mint_funcs.mintpad_mint(contract=mintpad_contract)
+                    else:
+                        continue
                 else:
                     logger.warning(f"{self.wallet} Unknown action: {action}")
                     continue
