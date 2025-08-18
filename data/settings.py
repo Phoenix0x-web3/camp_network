@@ -1,7 +1,9 @@
+import yaml
+import sys
 from libs.eth_async.classes import Singleton
 from data.config import SETTINGS_FILE
-import yaml
-
+from data.config import LOG_FILE, SETTINGS_FILE
+from loguru import logger
 
 class Settings(Singleton):
     def __init__(self):
@@ -41,3 +43,12 @@ class Settings(Singleton):
         self.imap_server = json_data.get("imap_server", "")
         self.imap_port = json_data.get("imap_port", "")
 
+# Configure the logger based on the settings
+settings = Settings()
+
+if settings.log_level not in ["DEBUG", "INFO", "WARNING", "ERROR"]:
+    raise ValueError(f"Invalid log level: {settings.log_level}. Must be one of: DEBUG, INFO, WARNING, ERROR")
+logger.remove()  # Remove the default logger
+logger.add(sys.stderr, level=settings.log_level)
+
+logger.add(LOG_FILE, level="DEBUG")

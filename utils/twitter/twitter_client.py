@@ -10,7 +10,6 @@ from libs.twitter.utils import remove_at_sign
 from utils.db_api.models import Wallet
 from utils.db_api.wallet_api import update_twitter_token
 import libs.baseAsyncSession as BaseAsyncSession
-from data.config import logger
  
 
 #TODO Move to Exception file
