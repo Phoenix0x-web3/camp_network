@@ -51,7 +51,7 @@ async def activity(action: int):
         logger.error(f"Decryption Failed | Wrong Password")
         return
     
-    all_wallets = db.all(Wallet)
+    all_wallets = db.all(Wallet, Wallet.account_blocked == False)
 
     # Filter wallets if EXACT_WALLETS_TO_USE is defined
     if Settings().exact_wallets_to_run:
