@@ -76,7 +76,6 @@ onchain_actions: [
     "storychain",
     "awana",
     "panenka",
-    "scoreplay"
 ]
 #Multiple actions for onchain. Example mint one type NFT > 1 times. 
 multiple_actions: False
