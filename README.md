@@ -117,9 +117,9 @@ tg_user_id: ''
 
 **Settings**:
 ```yaml
-# Actual Windows UserAgent. If capmonster can't resolve captcha. Try update Chrome version. 138.0.0.0 -> 139.0.0.0
+# Actual Windows UserAgent. If capmonster can't resolve captcha. Try update Chrome version. 139.0.0.0 -> 140.0.0.0
 actual_ua: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, 
-  like Gecko) Chrome/138.0.0.0 Safari/537.36
+  like Gecko) Chrome/139.0.0.0 Safari/537.36
 # Api Key from https://dash.capmonster.cloud/
 capmonster_api_key: 10**************************
 # SolveCaptcha Api Key. Used for faucet
