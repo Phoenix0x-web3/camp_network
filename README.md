@@ -4,6 +4,9 @@ More info:
 [Telegram Channel](https://t.me/phoenix_w3)  
 [Telegram Chat](https://t.me/phoenix_w3_space)
 
+[Инструкция на русском](https://phoenix-14.gitbook.io/phoenix/proekty/camp-network)
+
+
 ## Camp Network Network
 
 Camp Network is an Layer-1 blockchain currently in Testnet Phase 3, designed to register, protect, and monetize intellectual property directly on-chain.
@@ -53,6 +56,7 @@ camp_network/
 |   ├── twitter_tokens.txt  # Twitter auth tokens (optional)
 |   ├── reserve_twitter.txt # Reserved Twitter auth tokens, in case the main twitter tokens becomes unavailable  (optional)
 │   ├── private_keys.txt    # EVM wallet private keys
+│   ├── email_data.txt      # Emails
 |   ├── proxy.txt           # Proxy addresses (optional)
 |   ├── reserve_proxy.txt   # Reserved Proxy addresses for usage, in case the main proxy becomes unavailable (optional)
 |   ├── ref_codes.txt       # List of refferals codes (optional)
@@ -67,6 +71,7 @@ camp_network/
 - `private_keys.txt`: One private key per line
 - `proxy.txt`: One proxy per line (format: `http://user:pass@ip:port`)
 - `reserve_proxy.txt`: One proxy per line (format: `http://user:pass@ip:port`)
+- `email_data.txt`: One email per line (format: `rambler email:pass, icloud email:pass:fake_email`)
 - `twitter_tokens.txt`: One token per line 
 - `reserve_twitter.txt`: One token per line 
 - `discord_tokens.txt`: One token per line 
