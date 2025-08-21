@@ -240,6 +240,7 @@ class Scoreplay(Base):
         elif data.get("success") is True:
             return True
         elif data.get("message") == "You have already claimed your daily reward. Please wait." and data.get("timeLeft"):
+            logger.info(f"{self.wallet} already claimed daily reward")
             return False
         elif data.get("message") == "Too many requests. Try again later.":
             return False
