@@ -208,8 +208,7 @@ class CampNetworkClient:
             return True
 
     async def complete_onchain(self):
-        # faucet = await self.complete_faucet()
-        faucet = True
+        faucet = await self.complete_faucet()
         if faucet:
             return await self.onchain_client.handle_actions()
 
