@@ -80,7 +80,7 @@ class Panenka(Base):
     async def panenka_login(self, login: str, password: str):
         """Login to Panenka with email and password"""
         cloudflare = CloudflareHandler(wallet=self.wallet)
-        token = await cloudflare.panenka_handle()
+        token = await cloudflare.handle_turnstile_captcha(websiteURL="https://panenkafc.gg/", websiteKey="0x4AAAAAABh8fBw-gFrcIbzt")
         if token:
             self.captcha_token = token 
 

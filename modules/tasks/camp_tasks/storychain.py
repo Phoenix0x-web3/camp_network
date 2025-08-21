@@ -31,6 +31,10 @@ class Storychain(Base):
         if not await self.authorize():
             logger.error(f"{self.wallet} Failed to authorize for Storychain")
             return False
+        if not await self.storychain_get_nova_stories():
+            await self.storychain_create_nova_story()
+            await asyncio.sleep(60)
+            await self.send_snag_request(loyalty_id="0f197e1e-fe39-4ea5-8d42-d00f0be4fb56", campaign_id="67d41e05222c2dd7b47982f1")
 
         if await self.storychain_get_stories():
             logger.info(f"{self.wallet} Already created a story for Remix Comic")
@@ -135,6 +139,57 @@ class Storychain(Base):
         if "characters" not in data:
             raise Exception(f"Unexpected response: {data}")
         return data["characters"][0] if data["characters"] else {}
+
+    @async_retry()
+    async def storychain_create_nova_story(self):
+        response = await self.browser.post(
+            url='https://api.storychain.ai/p/camp-stories/create',
+            json={
+                "prompt": self.faker.text(randint(15, 30))[:-1],
+                "isfr5":"true",
+                "jn19":"true"
+            },
+            cookies=self.cookies,
+
+        )
+        data = response.json()
+        logger.debug(f"{self.wallet} Create nova story response: {data}")
+        if not data.get("storyId"):
+            raise Exception(f"Unexpected response: {data}")
+        return data
+
+    @async_retry()
+    async def storychain_get_nova_stories(self):
+        response = await self.browser.get(
+            url='https://api.storychain.ai/p/camp-stories/my-stories',
+            cookies=self.cookies
+        )
+        data = response.json()
+        logger.debug(f"{self.wallet} Get stories response: {data}")
+        if "stories" in data:
+            logger.info(f"{self.wallet} already create a Nova story")
+            return True
+        return False
+
+    @async_retry()
+    async def send_snag_request(self, loyalty_id, campaign_id):
+        json_data = {
+            'input': self.wallet.address,
+            'LOYALTY_RULE_ID': f'{loyalty_id}',
+            'CAMPAIGN_ID': f'{campaign_id}',
+        }
+        response = await self.browser.post(
+            url="https://snag-quest-external.vercel.app/api/submit-story",
+            json=json_data
+        )
+        data = response.json()
+        logger.debug(f"{self.wallet} snag requst response: {data}")
+        if data["verified"]:
+            logger.success(f"{self.wallet} success create Nova Story")
+            return True
+        return False
+
+
 
     @async_retry()
     async def storychain_create_character(self):

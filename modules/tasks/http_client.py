@@ -70,10 +70,15 @@ class BaseHttpClient:
         """
         logger.info(f"{self.user} detected Cloudflare captcha, starting to solve")
 
+        if "camp" in url:
+            websiteURL = "https://loyalty.campnetwork.xyz"
+            websiteKey = "0x4AAAAAAADnPIDROrmt1Wwj"
         # Solve captcha
         cloudflare_handler = CloudflareHandler(wallet=self.user)
         success = await cloudflare_handler.handle_cloudflare_protection(
-            html=response_text
+            html=response_text,
+            websiteURL=websiteURL,
+            websiteKey=websiteKey,
         )
 
         if success:
