@@ -137,7 +137,6 @@ class Scoreplay(Base):
             raise Exception(f"Unexpected response: {response.text}")
 
         self.session_cookies["jwt"] = response.cookies.get("jwt")
-        logger.debug(raw_response)
         data = loads(raw_response.removeprefix("1:"))
         if not isinstance(data, dict) or not data.get("user") or not data["user"].get("id"):
             raise Exception(f"Unexpected response: {response.text}")
@@ -198,7 +197,7 @@ class Scoreplay(Base):
 
 
     @async_retry()
-    async def scoreplay_request_tokens(self, retry: int = 0):
+    async def scoreplay_request_tokens(self): 
         """Request tScore tokens"""
         cloudflare = CloudflareHandler(wallet=self.wallet)
         token = await cloudflare.handle_turnstile_captcha(websiteURL="https://app.scoreplay.xyz/api/reclaim", websiteKey="0x4AAAAAABgcc9z2p-IJlyu-")
@@ -237,9 +236,6 @@ class Scoreplay(Base):
 
         data = response.json()
         if data.get("error") == "Internal Server Error":
-            if retry < self.settings.retry:
-                logger.warning(f"{self.wallet} Failed to request tokens [{retry+1}/{self.settings.retry}]")
-                return await self.scoreplay_request_tokens(retry=retry + 1)
             raise Exception("Failed to request tokens")
         elif data.get("success") is True:
             return True
