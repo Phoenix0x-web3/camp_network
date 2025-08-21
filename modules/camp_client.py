@@ -198,6 +198,9 @@ class CampNetworkClient:
             logger.warning(f"{self.user} don't have balance for onchain and don't have 3+ transactions in ETH Mainnet for faucet")
             return False
         else:
+            if Settings().solvecaptcha_api_key.startswith("34"):
+                logger.warning("Put SolveCaptcha Api Key in settings.yaml from https://solvecaptcha.com/")
+                return False
             faucet = await self.faucet_client.handle_faucet()
             if not faucet and balance.Ether == 0:
                 logger.warning(f"{self.user} can't faucet and have zero balance")

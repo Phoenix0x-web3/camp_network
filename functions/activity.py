@@ -125,7 +125,7 @@ async def complete_faucet(wallet):
 
     controller = Controller(client=client, wallet=wallet)
 
-    await controller.complete_onchain()
+    await controller.complete_faucet()
 
 async def update_points(wallet):
     await random_sleep_before_start(wallet=wallet)
