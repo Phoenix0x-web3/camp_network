@@ -16,6 +16,7 @@ from modules.tasks.camp_tasks.awana import Awana
 from modules.tasks.camp_tasks.panenka import Panenka
 from modules.tasks.camp_tasks.tokentails import TokenTails
 from modules.tasks.camp_tasks.mint import MintFunctions
+from modules.tasks.camp_tasks.scoreplay import Scoreplay
 from libs.base import Base
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks
@@ -115,6 +116,11 @@ class CampOnchain(Base):
                 elif action == "tokentails":
                     tokentails = TokenTails(wallet=self.wallet)
                     success = await tokentails.run()
+                    if not success:
+                        continue
+                elif action == "scoreplay":
+                    scoreplay = Scoreplay(wallet=self.wallet)
+                    success = await scoreplay.run()
                     if not success:
                         continue
                 elif action == "base_camp":

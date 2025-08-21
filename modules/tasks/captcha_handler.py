@@ -63,7 +63,7 @@ class CloudflareHandler:
 
         return base64_encoded
 
-    async def get_recaptcha_task(self, html: str) -> Optional[int]:
+    async def get_recaptcha_task(self, html: str, websiteURL: str, websiteKey: str) -> Optional[int]:
         """
         Create task for solving Cloudflare Turnstile in CapMonster
 
@@ -86,8 +86,8 @@ class CloudflareHandler:
                 "clientKey": Settings().capmonster_api_key,
                 "task": {
                     "type": "TurnstileTask",
-                    "websiteURL": "https://loyalty.campnetwork.xyz",
-                    "websiteKey": "0x4AAAAAAADnPIDROrmt1Wwj",
+                    "websiteURL": f"{websiteURL}",
+                    "websiteKey": f"{websiteKey}",
                     "cloudflareTaskType": "cf_clearance",
                     "htmlPageBase64": html_base64,
                     "userAgent": windows_user_agent
@@ -188,7 +188,7 @@ class CloudflareHandler:
         logger.error(f"{self.browser.wallet} exceeded wait time for CapMonster solution")
         return None
 
-    async def recaptcha_handle(self, html: str) -> Optional[str]:
+    async def recaptcha_handle(self, html: str, websiteURL: str, websiteKey: str) -> Optional[str]:
         """
         Handle Cloudflare Turnstile captcha through CapMonster
 
@@ -207,7 +207,7 @@ class CloudflareHandler:
         for i in range(max_retry):
             try:
                 # Get task for solving Turnstile
-                task = await self.get_recaptcha_task(html=html)
+                task = await self.get_recaptcha_task(html=html, websiteURL=websiteURL, websiteKey=websiteKey)
                 if not task:
                     logger.error(f"{self.browser.wallet} failed to create task in CapMonster, attempt {i+1}/{max_retry}")
                     await asyncio.sleep(2)
@@ -231,7 +231,7 @@ class CloudflareHandler:
 
         return captcha_token
 
-    async def handle_cloudflare_protection(self, html: str) -> str | None:
+    async def handle_cloudflare_protection(self, html: str, websiteURL: str, websiteKey: str) -> str | None:
         """
         Handle Cloudflare protection
 
@@ -241,7 +241,7 @@ class CloudflareHandler:
         Returns:
             cf_clearance token
         """
-        cf_clearance = await self.recaptcha_handle(html=html)
+        cf_clearance = await self.recaptcha_handle(html=html, websiteURL=websiteURL, websiteKey=websiteKey)
 
         if cf_clearance:
             logger.success(f"{self.browser.wallet} Cloudflare protection successfully bypassed")
@@ -249,7 +249,7 @@ class CloudflareHandler:
         else:
             return None
 
-    async def get_recaptcha_task_panenka(self) -> Optional[int]:
+    async def get_recaptcha_task_turnstile(self, websiteURL: str, websiteKey: str) -> Optional[int]:
         """
         Create task for solving Cloudflare Turnstile in CapMonster
 
@@ -269,8 +269,8 @@ class CloudflareHandler:
                 "clientKey": Settings().capmonster_api_key,
                 "task": {
                     "type": "TurnstileTaskProxyless",
-                    "websiteURL": "https://panenkafc.gg/",
-                    "websiteKey": "0x4AAAAAABh8fBw-gFrcIbzt",
+                    "websiteURL": f"{websiteURL}",
+                    "websiteKey": f"{websiteKey}",
                 }
             }
 
@@ -311,7 +311,7 @@ class CloudflareHandler:
             logger.error(f"{self.browser.wallet} error creating task in CapMonster: {str(e)}")
             return None
 
-    async def panenka_handle(self,) -> Optional[str]:
+    async def handle_turnstile_captcha(self, websiteURL: str, websiteKey: str) -> Optional[str]:
         max_retry = 10
         captcha_token = None
 
@@ -321,7 +321,7 @@ class CloudflareHandler:
         for i in range(max_retry):
             try:
                 # Get task for solving Turnstile
-                task = await self.get_recaptcha_task_panenka()
+                task = await self.get_recaptcha_task_turnstile(websiteURL=websiteURL, websiteKey=websiteKey)
                 if not task:
                     logger.error(f"{self.browser.wallet} failed to create task in CapMonster, attempt {i+1}/{max_retry}")
                     await asyncio.sleep(2)

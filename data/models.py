@@ -131,3 +131,9 @@ class Contracts(Singleton):
             abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
         ),
     ]
+
+    TSCORE = RawContract(
+        title="TSCORE",
+        address="0x3A1Ac1cBd0016D2F59Fe400EcAccf25767996175",
+        abi=DefaultABIs.Token
+    )

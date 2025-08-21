@@ -5,7 +5,7 @@ FINGERPRINT_DEFAULT = {
     "impersonate": "chrome136",   
     "user-agent": f"{Settings().actual_ua}",
     "sec-ch-ua-platform": "Windows",
-    "sec-ch-ua": 'Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99',
+    "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
     "accept-language" : "en-US,en;q=0.9",
 }
 
