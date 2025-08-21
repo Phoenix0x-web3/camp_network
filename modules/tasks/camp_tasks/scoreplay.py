@@ -34,8 +34,8 @@ class Scoreplay(Base):
 
     async def run(self):
         """Run the Scoreplay task workflow"""
-        if TokenAmount(amount=await self.client.wallet.balance(token=Contracts.TSCORE)).Ether >= 700:
-            logger.info(f"{self.wallet} account already have 700 TSCORE")
+        if TokenAmount(amount=await self.client.wallet.balance(token=Contracts.TSCORE)).Ether >= 70:
+            logger.info(f"{self.wallet} account already have 70 TSCORE")
             return False
         if not await self.authorize():
             logger.error(f"{self.wallet} Failed to authorize")
@@ -56,7 +56,7 @@ class Scoreplay(Base):
 
     async def wait_balance(self, token, old_balance, timeout = 60):
         time_now = time()
-        while time_now + 60 > time():
+        while time_now + timeout > time():
             balance = await self.client.wallet.balance(token=token)
             if old_balance.Wei < balance.Wei:
                 logger.success(f"{self.wallet} success claim TScore")

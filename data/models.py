@@ -134,6 +134,6 @@ class Contracts(Singleton):
 
     TSCORE = RawContract(
         title="TSCORE",
-        address="0x3A1Ac1cBd0016D2F59Fe400EcAccf25767996175",
+        address="0x861fb672cD710a1611BCDb9Cb40473DECF41d026",
         abi=DefaultABIs.Token
     )
