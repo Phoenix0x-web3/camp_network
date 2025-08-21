@@ -58,7 +58,7 @@ class Scoreplay(Base):
         time_now = time()
         while time_now + 60 > time():
             balance = await self.client.wallet.balance(token=token)
-            if old_balance < balance:
+            if old_balance.Wei < balance.Wei:
                 logger.success(f"{self.wallet} success claim TScore")
                 return True
             await asyncio.sleep(5)
