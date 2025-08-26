@@ -118,7 +118,6 @@ class CampNetworkClient:
         quests = await self.quest_client.complete_all_quests(
             retry_failed=retry_failed, max_retries=max_retries
         )
-        await self.update_points()
         return quests
 
     async def complete_twitter_quests(
@@ -147,7 +146,6 @@ class CampNetworkClient:
 
         # Execute all quests
         quests = await self.twitter_client.complete_twitter_quests()
-        await self.update_points()
         return quests
 
     async def complete_twitter_and_regular_quests(self):
@@ -164,6 +162,9 @@ class CampNetworkClient:
         random.shuffle(functions)
         for func in functions:
             await func()
+        
+        await self.update_points()
+        
         return
 
     async def update_points(self):
