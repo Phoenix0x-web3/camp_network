@@ -44,7 +44,7 @@ async def activity(action: int):
 
     try:
         check_password_wallet = db.one(Wallet, Wallet.id == 1)
-        client = Client(private_key=check_password_wallet.private_key)
+        Client(private_key=check_password_wallet.private_key)
 
     except Exception:
         logger.error(f"Decryption Failed | Wrong Password")
