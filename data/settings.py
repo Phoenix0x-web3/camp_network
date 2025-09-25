@@ -1,13 +1,15 @@
-import yaml
 import sys
-from libs.eth_async.classes import Singleton
-from data.config import SETTINGS_FILE
-from data.config import LOG_FILE, SETTINGS_FILE
+
+import yaml
 from loguru import logger
+
+from data.config import LOG_FILE, SETTINGS_FILE
+from libs.eth_async.classes import Singleton
+
 
 class Settings(Singleton):
     def __init__(self):
-        with open(SETTINGS_FILE, 'r') as file:
+        with open(SETTINGS_FILE, "r") as file:
             json_data = yaml.safe_load(file) or {}
 
         self.private_key_encryption = json_data.get("private_key_encryption", False)
@@ -18,7 +20,7 @@ class Settings(Singleton):
         self.hide_wallet_address_log = json_data.get("hide_wallet_address_log", True)
         self.log_level = json_data.get("log_level", "INFO")
         self.sleep_after_each_cycle_hours = json_data.get("sleep_after_each_cycle_hours", 0)
-        self.random_pause_start_wallet_min = json_data.get("random_pause_start_wallet",{}).get("min")
+        self.random_pause_start_wallet_min = json_data.get("random_pause_start_wallet", {}).get("min")
         self.random_pause_start_wallet_max = json_data.get("random_pause_start_wallet", {}).get("max")
         self.random_pause_between_actions_min = json_data.get("random_pause_between_actions", {}).get("min")
         self.random_pause_between_actions_max = json_data.get("random_pause_between_actions", {}).get("max")
@@ -42,6 +44,7 @@ class Settings(Singleton):
         self.use_imap = json_data.get("use_imap", False)
         self.imap_server = json_data.get("imap_server", "")
         self.imap_port = json_data.get("imap_port", "")
+
 
 # Configure the logger based on the settings
 settings = Settings()

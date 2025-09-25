@@ -1,31 +1,33 @@
-from utils.db_api.models import Base, Wallet
-from utils.db_api.db import DB
-
 from data.config import WALLETS_DB
+from utils.db_api.db import DB
+from utils.db_api.models import Base, Wallet
+
 
 def get_wallets(sqlite_query: bool = False) -> list[Wallet]:
     if sqlite_query:
-        return db.execute('SELECT * FROM wallets')
+        return db.execute("SELECT * FROM wallets")
 
     return db.all(entities=Wallet)
 
 
 def get_wallet_by_private_key(private_key: str, sqlite_query: bool = False) -> Wallet | None:
     if sqlite_query:
-        return db.execute('SELECT * FROM wallets WHERE private_key = ?', (private_key,), True)
+        return db.execute("SELECT * FROM wallets WHERE private_key = ?", (private_key,), True)
 
     return db.one(Wallet, Wallet.private_key == private_key)
-  
+
+
 def get_wallet_by_address(address: str, sqlite_query: bool = False) -> Wallet | None:
     if sqlite_query:
-        return db.execute('SELECT * FROM wallets WHERE private_key = ?', (private_key,), True)
+        return db.execute("SELECT * FROM wallets WHERE private_key = ?", (private_key,), True)
 
     return db.one(Wallet, Wallet.address == address)
-  
+
+
 def update_points(private_key: str, points: int | None) -> bool:
     """
     Updates the Points for a wallet with the given private_key.
-    
+
     Args:
         private_key: The private key of the wallet to update
         points: The update points number
@@ -38,19 +40,20 @@ def update_points(private_key: str, points: int | None) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
-    
+
     wallet.points = points
     db.commit()
     return True
 
+
 def update_twitter_token(private_key: str, updated_token: str | None) -> bool:
     """
     Updates the Twitter token for a wallet with the given private_key.
-    
+
     Args:
         private_key: The private key of the wallet to update
         new_token: The new Twitter token to set
-    
+
     Returns:
         bool: True if update was successful, False if wallet not found
     """
@@ -60,26 +63,28 @@ def update_twitter_token(private_key: str, updated_token: str | None) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
-    
+
     wallet.twitter_token = updated_token
     db.commit()
     return True
 
-def update_faucet_time(private_key:str, new_time) -> bool:
+
+def update_faucet_time(private_key: str, new_time) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
     wallet.last_faucet_claim = new_time
     return True
 
+
 def update_ref_code(private_key: str, ref_code: str | None) -> bool:
     """
     Updates the Ref Code token for Camp for a wallet with the given private_key.
-    
+
     Args:
         private_key: The private key of the wallet to update
         new_token: The new Twitter token to set
-    
+
     Returns:
         bool: True if update was successful, False if wallet not found
     """
@@ -89,10 +94,11 @@ def update_ref_code(private_key: str, ref_code: str | None) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
-    
+
     wallet.ref_code = ref_code
     db.commit()
     return True
+
 
 def replace_bad_proxy(private_key: str, new_proxy: str) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
@@ -103,6 +109,7 @@ def replace_bad_proxy(private_key: str, new_proxy: str) -> bool:
     db.commit()
     return True
 
+
 def replace_bad_twitter(private_key: str, new_token: str) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
@@ -112,7 +119,8 @@ def replace_bad_twitter(private_key: str, new_token: str) -> bool:
     db.commit()
     return True
 
-def mark_proxy_as_bad(private_key:str) -> bool:
+
+def mark_proxy_as_bad(private_key: str) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
@@ -120,7 +128,8 @@ def mark_proxy_as_bad(private_key:str) -> bool:
     db.commit()
     return True
 
-def mark_twitter_as_bad(private_key:str) -> bool:
+
+def mark_twitter_as_bad(private_key: str) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
@@ -128,7 +137,8 @@ def mark_twitter_as_bad(private_key:str) -> bool:
     db.commit()
     return True
 
-def mark_account_as_blocked(private_key:str) -> bool:
+
+def mark_account_as_blocked(private_key: str) -> bool:
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
@@ -136,11 +146,14 @@ def mark_account_as_blocked(private_key:str) -> bool:
     db.commit()
     return True
 
+
 def get_wallets_with_bad_proxy() -> list:
     return db.all(Wallet, Wallet.proxy_status == "BAD")
 
+
 def get_wallets_with_bad_twitter() -> list:
     return db.all(Wallet, Wallet.twitter_status == "BAD")
+
 
 def get_completed_quests(private_key: str):
     wallet = db.one(Wallet, Wallet.private_key == private_key)
@@ -148,13 +161,12 @@ def get_completed_quests(private_key: str):
         return []
     return wallet.completed_quests.split(",")
 
+
 def mark_quest_completed(private_key: str, quest_id: str):
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet:
         return False
-    completed_quests = (
-        wallet.completed_quests.split(",") if wallet.completed_quests else []
-    )
+    completed_quests = wallet.completed_quests.split(",") if wallet.completed_quests else []
 
     # Добавляем задание, если его там нет
     if quest_id not in completed_quests:
@@ -165,6 +177,7 @@ def mark_quest_completed(private_key: str, quest_id: str):
     db.commit()
     return True
 
+
 def is_quest_completed(private_key: str, quest_id: str):
     wallet = db.one(Wallet, Wallet.private_key == private_key)
     if not wallet or not wallet.completed_quests:
@@ -173,13 +186,12 @@ def is_quest_completed(private_key: str, quest_id: str):
     completed_quests = wallet.completed_quests.split(",")
     return quest_id in completed_quests
 
+
 def get_available_ref_codes() -> list:
     result = db.all(Wallet, Wallet.ref_code != None)
     code = [code.ref_code for code in result]
     return code
 
 
-
-
-db = DB(f'sqlite:///{WALLETS_DB}', echo=False, pool_recycle=3600, connect_args={'check_same_thread': False})
+db = DB(f"sqlite:///{WALLETS_DB}", echo=False, pool_recycle=3600, connect_args={"check_same_thread": False})
 db.create_tables(Base)

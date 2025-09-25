@@ -1,36 +1,24 @@
+import base64
 import getpass
+import hashlib
 import os
-
-from cryptography.fernet import InvalidToken
 import sys
 
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from loguru import logger
 
-from data.settings import Settings
 from data import config
 from data.config import SALT_PATH
-
-import base64
-import hashlib
-from cryptography.fernet import Fernet
-
-from data.config import SALT_PATH
+from data.settings import Settings
 
 
 def _derive_fernet_key(password: bytes, salt=None) -> bytes:
-
     try:
         if salt:
-            kdf = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=salt,
-                iterations=100000,
-                backend=default_backend()
-            )
+            kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
             return base64.urlsafe_b64encode(kdf.derive(password))
 
         else:
@@ -38,10 +26,8 @@ def _derive_fernet_key(password: bytes, salt=None) -> bytes:
             return base64.urlsafe_b64encode(digest)
 
     except TypeError:
-        logger.error('Error! Check salt file! Salt must be bites string')
+        logger.error("Error! Check salt file! Salt must be bites string")
         sys.exit(1)
-
-
 
 
 def set_cipher_suite(password) -> None:
@@ -49,13 +35,12 @@ def set_cipher_suite(password) -> None:
         cipher = Fernet(_derive_fernet_key(password))
 
         if not os.path.exists(SALT_PATH):
-
             cipher = Fernet(_derive_fernet_key(password))
 
             config.CIPHER_SUITE = cipher
 
         else:
-            with open(SALT_PATH, 'rb') as f:
+            with open(SALT_PATH, "rb") as f:
                 salt = f.read()
 
             cipher = Fernet(_derive_fernet_key(password, salt))
@@ -65,33 +50,30 @@ def set_cipher_suite(password) -> None:
 def get_private_key(enc_value: str) -> str:
     try:
         if Settings().private_key_encryption:
-            if 'gAAAA' in enc_value:
+            if "gAAAA" in enc_value:
                 return config.CIPHER_SUITE.decrypt(enc_value.encode()).decode()
 
         return enc_value
     except Exception:
         raise InvalidToken(f"{enc_value} | wrong password! Decrypt failed")
-        #sys.exit(f"{enc_value} | wrong password! Decrypt failed")
+        # sys.exit(f"{enc_value} | wrong password! Decrypt failed")
+
 
 def prk_encrypt(value: str) -> str:
     if Settings().private_key_encryption:
-        if not 'gAAAA' in value:
+        if not "gAAAA" in value:
             return config.CIPHER_SUITE.encrypt(value.encode()).decode()
 
     return value
 
+
 def check_encrypt_param(confirm: bool = False, attempts: int = 3):
     if Settings().private_key_encryption:
-
         for try_num in range(1, attempts + 1):
-            pwd1 = getpass.getpass(
-                "[DECRYPTOR] Enter password (input hidden): "
-            ).strip().encode()
+            pwd1 = getpass.getpass("[DECRYPTOR] Enter password (input hidden): ").strip().encode()
 
             if confirm:
-                pwd2 = getpass.getpass(
-                    "[DECRYPTOR] Repeat password: "
-                ).strip().encode()
+                pwd2 = getpass.getpass("[DECRYPTOR] Repeat password: ").strip().encode()
 
                 if pwd1 != pwd2:
                     print(f"Passwords do not match (attempt {try_num}/{attempts})\n")
@@ -105,22 +87,18 @@ def check_encrypt_param(confirm: bool = False, attempts: int = 3):
 
         raise RuntimeError("Password confirmation failed – too many attempts.")
 
+
 def format_password(password: str):
     import string
+
     # ADD UPPER CASE
     if not any([password_symbol in string.ascii_uppercase for password_symbol in password]):
-        first_letter = next(
-            (symbol for symbol in password if symbol in string.ascii_letters),
-            "i"
-        )
+        first_letter = next((symbol for symbol in password if symbol in string.ascii_letters), "i")
         password += first_letter.upper()
 
     # add lower case
     if not any([password_symbol in string.ascii_lowercase for password_symbol in password]):
-        first_letter = next(
-            (symbol for symbol in password if symbol in string.ascii_letters),
-            "f"
-        )
+        first_letter = next((symbol for symbol in password if symbol in string.ascii_letters), "f")
         password += first_letter.lower()
 
     # add numb3r5
@@ -128,16 +106,15 @@ def format_password(password: str):
         password += str(len(password))[0]
 
     # add $ymbol$
-    symbols_list = '!"#$%&\'()*+,-./:;<=>?@[]^_`{|}~'
+    symbols_list = "!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~"
     if not any([password_symbol in symbols_list for password_symbol in password]):
         password += symbols_list[sum(ord(c) for c in password) % len(symbols_list)]
 
     # add 8 characters
     if len(password) < 8:
         all_symbols = string.digits + string.ascii_letters
-        password += ''.join(
-            all_symbols[sum(ord(c) for c in password[:i+1]) % len(symbols_list)]
-            for i in range(max(0, 8 - len(password)))
+        password += "".join(
+            all_symbols[sum(ord(c) for c in password[: i + 1]) % len(symbols_list)] for i in range(max(0, 8 - len(password)))
         )
 
     return password

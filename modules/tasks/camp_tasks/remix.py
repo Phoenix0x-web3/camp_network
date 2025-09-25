@@ -1,20 +1,19 @@
 from datetime import datetime, timezone
 from random import choice, randint
-from loguru import logger
-from faker import Faker
 from time import time
 
-from web3.types import TxParams
 from eth_account.messages import encode_defunct
+from faker import Faker
+from loguru import logger
+from web3.types import TxParams
 
-from libs.eth_async.client import Client
-from libs.eth_async.data.models import Networks, TxArgs, TokenAmount
-from data.settings import Settings
 from data.models import Contracts
-from utils.db_api.models import Wallet
-from utils.browser import Browser
-from utils.retry import async_retry
 from libs.base import Base
+from libs.eth_async.client import Client
+from libs.eth_async.data.models import Networks, TxArgs
+from utils.browser import Browser
+from utils.db_api.models import Wallet
+from utils.retry import async_retry
 
 
 class Remix(Base):
@@ -69,7 +68,6 @@ class Remix(Base):
             return False
         self.session_headers["Authorization"] = "Bearer " + auth_token
 
-
         return await self.mint()
 
     @async_retry()
@@ -102,10 +100,7 @@ class Remix(Base):
         # Register NFT
         deadline = int(time() * 1e3)
         nft_data = await self.remix_register_nft(
-            random_image=random_image,
-            uploaded_data=uploaded_data,
-            model_type=model_type,
-            deadline=deadline
+            random_image=random_image, uploaded_data=uploaded_data, model_type=model_type, deadline=deadline
         )
         if not nft_data:
             logger.error(f"{self.wallet} Failed to register NFT")
@@ -121,7 +116,7 @@ class Remix(Base):
             return False
 
         nft_data, deadline = nft_raw_data
-        tx_label = 'mint remix NFT'
+        tx_label = "mint remix NFT"
 
         args = TxArgs(
             to=self.client.account.address,
@@ -133,22 +128,15 @@ class Remix(Base):
                 int(nft_data["licenseTerms"]["price"]),
                 nft_data["licenseTerms"]["duration"],
                 nft_data["licenseTerms"]["royaltyBps"],
-                nft_data["licenseTerms"]["paymentToken"]
+                nft_data["licenseTerms"]["paymentToken"],
             ),
             deadline=deadline,
-            signature=nft_data["signature"]
+            signature=nft_data["signature"],
         )
 
         data = contract.encode_abi("claim", args=(args.tuple()))
-        tx_params = TxParams(
-            to=Contracts.REMIX.address,
-            data=data
-        )
-        result = await self.execute_transaction(
-            tx_params=tx_params,
-            activity_type=tx_label,
-            retry_count=3
-        )
+        tx_params = TxParams(to=Contracts.REMIX.address, data=data)
+        result = await self.execute_transaction(tx_params=tx_params, activity_type=tx_label, retry_count=3)
 
         if result.success:
             logger.success(f"{self.wallet} Successfully minted Remix NFT")
@@ -161,12 +149,12 @@ class Remix(Base):
     async def remix_get_sign_nonce(self):
         """Get nonce for signing"""
         response = await self.browser.post(
-            url='https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/client-user/nonce',
+            url="https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/client-user/nonce",
             json={"walletAddress": self.client.account.address},
-            headers=self.session_headers
+            headers=self.session_headers,
         )
         data = response.json()
-        if not data.get('data') or data.get("isError"):
+        if not data.get("data") or data.get("isError"):
             raise Exception(f"Unexpected response: {data}")
         return data["data"]
 
@@ -174,17 +162,13 @@ class Remix(Base):
     async def remix_login(self, signature: str, sign_text: str):
         """Login with signature"""
         response = await self.browser.post(
-            url='https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/client-user/verify',
-            json={
-                "message": sign_text,
-                "signature": signature,
-                "walletAddress": self.client.account.address
-            },
-            headers=self.session_headers
+            url="https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/client-user/verify",
+            json={"message": sign_text, "signature": signature, "walletAddress": self.client.account.address},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(data)
-        if not data.get('data') or data.get("isError"):
+        if not data.get("data") or data.get("isError"):
             raise Exception(f"Unexpected response: {data}")
         return data["data"]
 
@@ -192,13 +176,12 @@ class Remix(Base):
     async def remix_check_generations(self):
         """Check if generations are available"""
         response = await self.browser.get(
-            url='https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/merv/check-generations',
-            headers=self.session_headers
+            url="https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/merv/check-generations", headers=self.session_headers
         )
         logger.debug(response.text)
         data = response.json()
         logger.debug(data)
-        if not data.get('data') or data.get("isError"):
+        if not data.get("data") or data.get("isError"):
             raise Exception(f"Unexpected response: {data}")
         return data["data"]["generations_left"] > 0
 
@@ -206,13 +189,13 @@ class Remix(Base):
     async def remix_generate(self, model_type: str):
         """Generate images for NFT"""
         response = await self.browser.post(
-            url='https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/merv/generate-image',
+            url="https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/merv/generate-image",
             json={"model_type": model_type},
-            headers=self.session_headers
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(data)
-        if not data.get('data') or data.get("isError"):
+        if not data.get("data") or data.get("isError"):
             raise Exception(f"Unexpected response: {data}")
         return data["data"]["images"]
 
@@ -220,13 +203,13 @@ class Remix(Base):
     async def remix_upload_url(self):
         """Get upload URL for image"""
         response = await self.browser.post(
-            url='https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/origin/upload-url',
+            url="https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/origin/upload-url",
             json={"name": "remix.png", "type": "image/png"},
-            headers=self.session_headers
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(data)
-        if not data.get('data') or data.get("isError"):
+        if not data.get("data") or data.get("isError"):
             raise Exception(f"Unexpected response: {data}")
         return data["data"]
 
@@ -234,16 +217,13 @@ class Remix(Base):
     async def remix_update_status(self, file_key: str):
         """Update upload status"""
         response = await self.browser.put(
-            url='https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/origin/update-status',
-            json={
-                "status": "success",
-                "fileKey": file_key
-            },
-            headers=self.session_headers
+            url="https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/origin/update-status",
+            json={"status": "success", "fileKey": file_key},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(data)
-        if data.get('data') != "success" or data.get("isError"):
+        if data.get("data") != "success" or data.get("isError"):
             raise Exception(f"Unexpected response: {data}")
         return True
 
@@ -251,7 +231,7 @@ class Remix(Base):
     async def remix_register_nft(self, random_image: dict, uploaded_data: dict, model_type: str, deadline: int):
         """Register NFT data"""
         response = await self.browser.post(
-            url='https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/origin/register',
+            url="https://wv2h4to5qa.execute-api.us-east-2.amazonaws.com/dev/auth/origin/register",
             json={
                 "source": "file",
                 "deadline": deadline,
@@ -259,21 +239,21 @@ class Remix(Base):
                     "price": "0",
                     "duration": 2629800,
                     "royaltyBps": 0,
-                    "paymentToken": "0x0000000000000000000000000000000000000000"
+                    "paymentToken": "0x0000000000000000000000000000000000000000",
                 },
                 "metadata": {
                     "name": Faker().text(randint(8, 20))[:-1],
                     "description": "A unique remix created by mAItrix",
                     "image": random_image["url"],
-                    "attributes": [{"trait_type": "Base Character", "value": model_type}]
+                    "attributes": [{"trait_type": "Base Character", "value": model_type}],
                 },
                 "parentId": 5,
-                "fileKey": uploaded_data["key"]
+                "fileKey": uploaded_data["key"],
             },
-            headers=self.session_headers
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(data)
-        if not data.get('data') or data.get("isError"):
+        if not data.get("data") or data.get("isError"):
             raise Exception(f"Unexpected response: {data}")
         return data["data"]

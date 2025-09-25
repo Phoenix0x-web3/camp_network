@@ -1,15 +1,17 @@
 from datetime import datetime
 
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column
-from data.settings import Settings
 import sqlalchemy as sa
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from data.settings import Settings
+
 
 class Base(DeclarativeBase):
     pass
 
+
 class Wallet(Base):
-    __tablename__ = 'wallets'
+    __tablename__ = "wallets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     private_key: Mapped[str] = mapped_column(unique=True, index=True)
@@ -26,8 +28,7 @@ class Wallet(Base):
     account_blocked: Mapped[bool] = mapped_column(default=False, server_default=sa.false(), nullable=False)
     last_faucet_claim: Mapped[datetime | None] = mapped_column(default=None)
 
-
     def __repr__(self):
         if Settings().hide_wallet_address_log:
-            return f'[{self.id}]'
-        return f'[{self.id}][{self.address}]'
+            return f"[{self.id}]"
+        return f"[{self.id}][{self.address}]"

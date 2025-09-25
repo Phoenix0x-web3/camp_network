@@ -1,5 +1,5 @@
 from loguru import logger
-from sqlalchemy import create_engine, text, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.orm import Session
 
@@ -104,7 +104,7 @@ class DB:
             self.s.add(row)
 
         else:
-            raise ValueError('Wrong type!')
+            raise ValueError("Wrong type!")
 
         self.commit()
 
@@ -118,7 +118,7 @@ class DB:
         :param default_value: the default value for the new column (optional)
         """
         inspector = inspect(self.engine)
-        columns = [col['name'] for col in inspector.get_columns(table_name)]
+        columns = [col["name"] for col in inspector.get_columns(table_name)]
 
         if column_name in columns:
             logger.warning(f"Column '{column_name}' already exists in table '{table_name}'.")
@@ -130,12 +130,10 @@ class DB:
 
             # Устанавливаем только DEFAULT, если оно задано
             if default_value is not None:
-                alter_table_query += f" DEFAULT '{default_value}'" if isinstance(default_value,
-                                                                                 str) else f" DEFAULT {default_value}"
+                alter_table_query += f" DEFAULT '{default_value}'" if isinstance(default_value, str) else f" DEFAULT {default_value}"
 
             with self.engine.connect() as connection:
                 connection.execute(text(alter_table_query))
                 logger.success(f"Column '{column_name}' added to table '{table_name}'.")
         except DatabaseError as e:
             logger.error(f"Error adding column '{column_name}' to table '{table_name}': {e}")
-

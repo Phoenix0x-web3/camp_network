@@ -1,14 +1,15 @@
 import asyncio
-import json
 import base64
+import json
 import urllib.parse
+from typing import Optional, Tuple
 from urllib.parse import urlparse
-from typing import Optional, Tuple 
+
 from loguru import logger
 
+from data.settings import Settings
 from utils.browser import Browser
 from utils.db_api.models import Wallet
-from data.settings import Settings
 
 
 class CloudflareHandler:
@@ -59,7 +60,7 @@ class CloudflareHandler:
         unescaped = urllib.parse.unquote(encoded)
 
         # Equivalent to btoa in JavaScript
-        base64_encoded = base64.b64encode(unescaped.encode('latin1')).decode('ascii')
+        base64_encoded = base64.b64encode(unescaped.encode("latin1")).decode("ascii")
 
         return base64_encoded
 
@@ -90,36 +91,29 @@ class CloudflareHandler:
                     "websiteKey": f"{websiteKey}",
                     "cloudflareTaskType": "cf_clearance",
                     "htmlPageBase64": html_base64,
-                    "userAgent": windows_user_agent
-                }
+                    "userAgent": windows_user_agent,
+                },
             }
 
             # Add proxy data if available
             if ip and port:
-                json_data["task"].update({
-                    "proxyType": "http",
-                    "proxyAddress": ip,
-                    "proxyPort": port
-                })
+                json_data["task"].update({"proxyType": "http", "proxyAddress": ip, "proxyPort": port})
 
                 if login and password:
-                    json_data["task"].update({
-                        "proxyLogin": login,
-                        "proxyPassword": password
-                    })
+                    json_data["task"].update({"proxyLogin": login, "proxyPassword": password})
 
             # Create new session and make request
             resp = await self.browser.post(
-                url='https://api.capmonster.cloud/createTask',
+                url="https://api.capmonster.cloud/createTask",
                 json=json_data,
             )
 
             if resp.status_code == 200:
                 result = resp.text
                 result = json.loads(result)
-                if result.get('errorId') == 0:
+                if result.get("errorId") == 0:
                     logger.info(f"{self.browser.wallet} created task in CapMonster: {result['taskId']}")
-                    return result['taskId']
+                    return result["taskId"]
                 else:
                     logger.error(f"{self.browser.wallet} CapMonster error: {result.get('errorDescription', 'Unknown error')}")
                     return None
@@ -141,10 +135,7 @@ class CloudflareHandler:
         Returns:
             cf_clearance token or None in case of error
         """
-        json_data = {
-            "clientKey": Settings().capmonster_api_key,
-            "taskId": task_id
-        }
+        json_data = {"clientKey": Settings().capmonster_api_key, "taskId": task_id}
 
         # Maximum wait time (60 seconds)
         max_attempts = 60
@@ -152,24 +143,24 @@ class CloudflareHandler:
         for _ in range(max_attempts):
             try:
                 resp = await self.browser.post(
-                    url='https://api.capmonster.cloud/getTaskResult',
+                    url="https://api.capmonster.cloud/getTaskResult",
                     json=json_data,
                 )
 
                 if resp.status_code == 200:
                     result = resp.text
                     result = json.loads(result)
-                    if result['status'] == 'ready':
+                    if result["status"] == "ready":
                         # Get cf_clearance from solution
-                        if 'solution' in result:
-                            cf_clearance = result['solution'].get('cf_clearance') or result['solution'].get('token')
+                        if "solution" in result:
+                            cf_clearance = result["solution"].get("cf_clearance") or result["solution"].get("token")
                             logger.success(f"{self.browser.wallet} obtained cf_clearance token")
                             return cf_clearance
 
                         logger.error(f"{self.browser.wallet} solution does not contain cf_clearance")
                         return None
 
-                    elif result['status'] == 'processing':
+                    elif result["status"] == "processing":
                         # If task is still processing, wait 1 second
                         await asyncio.sleep(1)
                         continue
@@ -209,7 +200,7 @@ class CloudflareHandler:
                 # Get task for solving Turnstile
                 task = await self.get_recaptcha_task(html=html, websiteURL=websiteURL, websiteKey=websiteKey)
                 if not task:
-                    logger.error(f"{self.browser.wallet} failed to create task in CapMonster, attempt {i+1}/{max_retry}")
+                    logger.error(f"{self.browser.wallet} failed to create task in CapMonster, attempt {i + 1}/{max_retry}")
                     await asyncio.sleep(2)
                     continue
 
@@ -220,7 +211,7 @@ class CloudflareHandler:
                     logger.success(f"{self.browser.wallet} successfully obtained captcha token")
                     break
                 else:
-                    logger.warning(f"{self.browser.wallet} failed to get token, attempt {i+1}/{max_retry}")
+                    logger.warning(f"{self.browser.wallet} failed to get token, attempt {i + 1}/{max_retry}")
                     await asyncio.sleep(3)
                     continue
 
@@ -263,7 +254,6 @@ class CloudflareHandler:
             # Parse proxy
             ip, port, login, password = await self.parse_proxy()
 
-
             # Data for CapMonster request
             json_data = {
                 "clientKey": Settings().capmonster_api_key,
@@ -271,35 +261,28 @@ class CloudflareHandler:
                     "type": "TurnstileTaskProxyless",
                     "websiteURL": f"{websiteURL}",
                     "websiteKey": f"{websiteKey}",
-                }
+                },
             }
 
             # Add proxy data if available
             if ip and port:
-                json_data["task"].update({
-                    "proxyType": "http",
-                    "proxyAddress": ip,
-                    "proxyPort": port
-                })
+                json_data["task"].update({"proxyType": "http", "proxyAddress": ip, "proxyPort": port})
 
                 if login and password:
-                    json_data["task"].update({
-                        "proxyLogin": login,
-                        "proxyPassword": password
-                    })
+                    json_data["task"].update({"proxyLogin": login, "proxyPassword": password})
 
             # Create new session and make request
             resp = await self.browser.post(
-                url='https://api.capmonster.cloud/createTask',
+                url="https://api.capmonster.cloud/createTask",
                 json=json_data,
             )
 
             if resp.status_code == 200:
                 result = resp.text
                 result = json.loads(result)
-                if result.get('errorId') == 0:
+                if result.get("errorId") == 0:
                     logger.info(f"{self.browser.wallet} created task in CapMonster: {result['taskId']}")
-                    return result['taskId']
+                    return result["taskId"]
                 else:
                     logger.error(f"{self.browser.wallet} CapMonster error: {result.get('errorDescription', 'Unknown error')}")
                     return None
@@ -323,7 +306,7 @@ class CloudflareHandler:
                 # Get task for solving Turnstile
                 task = await self.get_recaptcha_task_turnstile(websiteURL=websiteURL, websiteKey=websiteKey)
                 if not task:
-                    logger.error(f"{self.browser.wallet} failed to create task in CapMonster, attempt {i+1}/{max_retry}")
+                    logger.error(f"{self.browser.wallet} failed to create task in CapMonster, attempt {i + 1}/{max_retry}")
                     await asyncio.sleep(2)
                     continue
 
@@ -334,7 +317,7 @@ class CloudflareHandler:
                     logger.success(f"{self.browser.wallet} successfully obtained captcha token")
                     break
                 else:
-                    logger.warning(f"{self.browser.wallet} failed to get token, attempt {i+1}/{max_retry}")
+                    logger.warning(f"{self.browser.wallet} failed to get token, attempt {i + 1}/{max_retry}")
                     await asyncio.sleep(3)
                     continue
 

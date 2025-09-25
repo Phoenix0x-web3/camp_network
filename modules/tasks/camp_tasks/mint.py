@@ -1,20 +1,16 @@
 # mint.py
-import random
-from typing import Dict, Optional
-from loguru import logger
-from dataclasses import dataclass
-import asyncio
+from typing import Optional
 
+from loguru import logger
 from web3.constants import MAX_INT
 from web3.contract.async_contract import AsyncContract
 from web3.contract.contract import Contract
 from web3.types import TxParams
-from libs.base import Base
-from libs.eth_async.client import Client
-from libs.eth_async.data.models import TxArgs, Networks
-from libs.eth_async.data.models import TokenAmount
 
 from data.settings import Settings
+from libs.base import Base
+from libs.eth_async.client import Client
+from libs.eth_async.data.models import Networks, TokenAmount, TxArgs
 from utils.db_api.models import Wallet
 
 ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
@@ -22,9 +18,7 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 F_ADDRESS = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
 
-
 class MintFunctions(Base):
-
     def __init__(self, wallet: Wallet):
         super().__init__(wallet=wallet, client=Client(private_key=wallet.private_key, network=Networks.Camp))
         self.settings = Settings()
@@ -54,7 +48,6 @@ class MintFunctions(Base):
         except Exception as e:
             logger.error(f"{self.wallet} Error checking mint need: {str(e)}")
             return False, 0
-
 
     async def base_camp_mint(self, contract: AsyncContract | Contract, quantity: int = 1) -> Optional[str]:
         """Mint Base Camp NFT

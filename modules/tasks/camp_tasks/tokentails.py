@@ -1,18 +1,18 @@
 import asyncio
 import random
-from web3.types import TxParams
-from loguru import logger
 
-from libs.eth_async.client import Client
-from libs.eth_async.data.models import Networks
-from data.settings import Settings
-from libs.eth_async.data.models import RawContract
+from loguru import logger
+from web3.types import TxParams
+
 from data.models import Contracts
-from utils.db_api.models import Wallet
-from utils.browser import Browser
-from utils.retry import async_retry
-from utils.imap import Mail
+from data.settings import Settings
 from libs.base import Base
+from libs.eth_async.client import Client
+from libs.eth_async.data.models import Networks, RawContract
+from utils.browser import Browser
+from utils.db_api.models import Wallet
+from utils.imap import Mail
+from utils.retry import async_retry
 
 
 class TokenTails(Base):
@@ -51,7 +51,6 @@ class TokenTails(Base):
         self.session_headers["Accesstoken"] = "fb" + token_resp["access_token"]
         logger.debug(f"{self.wallet} Successfully got access token: {token_resp['access_token'][:10]}...")
 
-
         # Get profile
         profile_info = await self.tokentails_get_profile()
         if not profile_info:
@@ -63,8 +62,7 @@ class TokenTails(Base):
             success = await self.mint(i)
             if success:
                 random_sleep = random.randint(
-                    self.settings.random_pause_between_actions_min,
-                    self.settings.random_pause_between_actions_max
+                    self.settings.random_pause_between_actions_min, self.settings.random_pause_between_actions_max
                 )
                 logger.info(f"{self.wallet} Sleeping {random_sleep:.2f} seconds after mint {i.title}")
                 await asyncio.sleep(random_sleep)
@@ -76,15 +74,10 @@ class TokenTails(Base):
     async def tokentails_login_mail(self, login: str, password: str):
         """Login to TokenTails with email and password"""
         response = await self.browser.post(
-            url='https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
+            url="https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword",
             params={"key": "AIzaSyCfitm6sU-lOunY3JpGdn8D4Ng7Dz5m3yk"},
-            json={
-                "returnSecureToken": True,
-                "email": login,
-                "password": password,
-                "clientType": "CLIENT_TYPE_WEB"
-            },
-            headers=self.session_headers
+            json={"returnSecureToken": True, "email": login, "password": password, "clientType": "CLIENT_TYPE_WEB"},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Login response: {data}")
@@ -98,15 +91,10 @@ class TokenTails(Base):
     async def tokentails_register_mail(self, login: str, password: str):
         """Register a new TokenTails account"""
         response = await self.browser.post(
-            url='https://identitytoolkit.googleapis.com/v1/accounts:signUp',
+            url="https://identitytoolkit.googleapis.com/v1/accounts:signUp",
             params={"key": "AIzaSyCfitm6sU-lOunY3JpGdn8D4Ng7Dz5m3yk"},
-            json={
-                "returnSecureToken": True,
-                "email": login,
-                "password": password,
-                "clientType": "CLIENT_TYPE_WEB"
-            },
-            headers=self.session_headers
+            json={"returnSecureToken": True, "email": login, "password": password, "clientType": "CLIENT_TYPE_WEB"},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Register response: {data}")
@@ -118,13 +106,10 @@ class TokenTails(Base):
     async def tokentails_get_token(self, refresh_token: str):
         """Get access token using refresh token"""
         response = await self.browser.post(
-            url='https://securetoken.googleapis.com/v1/token',
+            url="https://securetoken.googleapis.com/v1/token",
             params={"key": "AIzaSyCfitm6sU-lOunY3JpGdn8D4Ng7Dz5m3yk"},
-            data={
-                "grant_type": "refresh_token",
-                "refresh_token": refresh_token
-            },
-            headers={"Content-Type": "application/x-www-form-urlencoded", **self.session_headers}
+            data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+            headers={"Content-Type": "application/x-www-form-urlencoded", **self.session_headers},
         )
         data = response.json()
         logger.debug(f"{self.wallet} Get token response: {data}")
@@ -135,10 +120,7 @@ class TokenTails(Base):
     @async_retry()
     async def tokentails_get_profile(self):
         """Get user profile"""
-        response = await self.browser.get(
-            url='https://api.tokentails.com/user/profile',
-            headers=self.session_headers
-        )
+        response = await self.browser.get(url="https://api.tokentails.com/user/profile", headers=self.session_headers)
         data = response.json()
         logger.debug(f"{self.wallet} Profile response: {data}")
         if data.get("catpoints") is not None:
@@ -149,8 +131,7 @@ class TokenTails(Base):
     async def tokentails_use_random_ref(self, ref_code: str):
         """Apply random referral code"""
         response = await self.browser.get(
-            url=f'https://api.tokentails.com/user/catbassadors/referralw/{ref_code}',
-            headers=self.session_headers
+            url=f"https://api.tokentails.com/user/catbassadors/referralw/{ref_code}", headers=self.session_headers
         )
         data = response.json()
         logger.debug(f"{self.wallet} Referral response: {data}")
@@ -160,24 +141,17 @@ class TokenTails(Base):
 
     async def mint(self, contract: RawContract):
         """Mint a mystery box NFT"""
-        index=int(contract.title[-1])
+        index = int(contract.title[-1])
         contract = await self.client.contracts.get(contract_address=contract)
         balance = await self.check_nft_balance(contract=contract)
         if balance > 0:
             logger.info(f"{self.wallet} Already owns mystery box {index} NFT")
             return False
 
-        tx_label = f'mint mystery box {index} NFT'
+        tx_label = f"mint mystery box {index} NFT"
         data = contract.encode_abi("safeMint", args=(self.client.account.address,))
-        tx_params = TxParams(
-            to=contract.address,
-            data=data
-        )
-        result = await self.execute_transaction(
-            tx_params=tx_params,
-            activity_type=tx_label,
-            retry_count=3
-        )
+        tx_params = TxParams(to=contract.address, data=data)
+        result = await self.execute_transaction(tx_params=tx_params, activity_type=tx_label, retry_count=3)
 
         if result.success:
             logger.success(f"{self.wallet} Successfully minted mystery box {index} NFT")
@@ -194,10 +168,7 @@ class TokenTails(Base):
     @async_retry()
     async def tokentails_complete_quest(self, api_path: str):
         """Complete quest for mystery box"""
-        response = await self.browser.get(
-            url=f'https://api.tokentails.com/quest/contest/{api_path}',
-            headers=self.session_headers
-        )
+        response = await self.browser.get(url=f"https://api.tokentails.com/quest/contest/{api_path}", headers=self.session_headers)
         data = response.json()
         logger.debug(f"{self.wallet} Quest completion response: {data}")
         if data.get("success") is True:

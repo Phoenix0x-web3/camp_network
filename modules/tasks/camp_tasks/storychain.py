@@ -1,17 +1,18 @@
 import asyncio
 import time
-from random import randint, choice
-from loguru import logger
-from faker import Faker
-from eth_account.messages import encode_defunct
+from random import choice, randint
 
+from eth_account.messages import encode_defunct
+from faker import Faker
+from loguru import logger
+
+from data.settings import Settings
+from libs.base import Base
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks
-from data.settings import Settings
-from utils.db_api.models import Wallet
 from utils.browser import Browser
+from utils.db_api.models import Wallet
 from utils.retry import async_retry
-from libs.base import Base
 
 
 class Storychain(Base):
@@ -56,10 +57,12 @@ class Storychain(Base):
                 if not created_character.get("regularPortrait"):
                     await self.storychain_choose_character(new_character["_id"], len(created_character["initialCharacterImages"]))
 
-                characters = [await self.storychain_publish_character(
-                    char_id=new_character["_id"],
-                    first_name=self.faker.first_name_male() if new_character["gender"] == "Male" else self.faker.first_name_female()
-                )]
+                characters = [
+                    await self.storychain_publish_character(
+                        char_id=new_character["_id"],
+                        first_name=self.faker.first_name_male() if new_character["gender"] == "Male" else self.faker.first_name_female(),
+                    )
+                ]
 
             random_character = choice(characters)
             if not await self.storychain_create_character_story(char_id=random_character["_id"]):
@@ -101,14 +104,9 @@ class Storychain(Base):
         logger.debug(f"{self.wallet} Successfully logged in")
         return True
 
-
-
     @async_retry()
     async def storychain_get_stories(self):
-        response = await self.browser.get(
-            url='https://api.storychain.ai/characters/me',
-            cookies=self.cookies
-        )
+        response = await self.browser.get(url="https://api.storychain.ai/characters/me", cookies=self.cookies)
         data = response.json()
         logger.debug(f"{self.wallet} Get stories response: {data}")
         if "characters" not in data:
@@ -118,10 +116,7 @@ class Storychain(Base):
     @async_retry()
     async def storychain_get_characters(self):
         """Get available characters"""
-        response = await self.browser.get(
-            url='https://api.storychain.ai/characters/me/available',
-            cookies=self.cookies
-        )
+        response = await self.browser.get(url="https://api.storychain.ai/characters/me/available", cookies=self.cookies)
         data = response.json()
         logger.debug(f"{self.wallet} Get characters response: {data}")
         if "characters" not in data:
@@ -130,10 +125,7 @@ class Storychain(Base):
 
     @async_retry()
     async def storychain_get_unpublished_character(self):
-        response = await self.browser.get(
-            url='https://api.storychain.ai/characters/me',
-            cookies=self.cookies
-        )
+        response = await self.browser.get(url="https://api.storychain.ai/characters/me", cookies=self.cookies)
         data = response.json()
         logger.debug(f"{self.wallet} Get unpublished character response: {data}")
         if "characters" not in data:
@@ -143,14 +135,9 @@ class Storychain(Base):
     @async_retry()
     async def storychain_create_nova_story(self):
         response = await self.browser.post(
-            url='https://api.storychain.ai/p/camp-stories/create',
-            json={
-                "prompt": self.faker.text(randint(15, 30))[:-1],
-                "isfr5":"true",
-                "jn19":"true"
-            },
+            url="https://api.storychain.ai/p/camp-stories/create",
+            json={"prompt": self.faker.text(randint(15, 30))[:-1], "isfr5": "true", "jn19": "true"},
             cookies=self.cookies,
-
         )
         data = response.json()
         logger.debug(f"{self.wallet} Create nova story response: {data}")
@@ -160,10 +147,7 @@ class Storychain(Base):
 
     @async_retry()
     async def storychain_get_nova_stories(self):
-        response = await self.browser.get(
-            url='https://api.storychain.ai/p/camp-stories/my-stories',
-            cookies=self.cookies
-        )
+        response = await self.browser.get(url="https://api.storychain.ai/p/camp-stories/my-stories", cookies=self.cookies)
         data = response.json()
         logger.debug(f"{self.wallet} Get stories response: {data}")
         if "stories" in data:
@@ -174,14 +158,11 @@ class Storychain(Base):
     @async_retry()
     async def send_snag_request(self, loyalty_id, campaign_id):
         json_data = {
-            'input': self.wallet.address,
-            'LOYALTY_RULE_ID': f'{loyalty_id}',
-            'CAMPAIGN_ID': f'{campaign_id}',
+            "input": self.wallet.address,
+            "LOYALTY_RULE_ID": f"{loyalty_id}",
+            "CAMPAIGN_ID": f"{campaign_id}",
         }
-        response = await self.browser.post(
-            url="https://snag-quest-external.vercel.app/api/submit-story",
-            json=json_data
-        )
+        response = await self.browser.post(url="https://snag-quest-external.vercel.app/api/submit-story", json=json_data)
         data = response.json()
         logger.debug(f"{self.wallet} snag requst response: {data}")
         if data["verified"]:
@@ -189,17 +170,15 @@ class Storychain(Base):
             return True
         return False
 
-
-
     @async_retry()
     async def storychain_create_character(self):
         response = await self.browser.post(
-            url='https://api.storychain.ai/characters/create/byoptions',
+            url="https://api.storychain.ai/characters/create/byoptions",
             json={
                 **self._generate_random_character_params(),
                 "runpod": True,
             },
-            cookies=self.cookies
+            cookies=self.cookies,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Create character response: {data}")
@@ -212,14 +191,13 @@ class Storychain(Base):
             "gender": choice(["Male", "Female", "Other"]),
             "age": choice(["Teenager", "Young Adult", "Adult", "Elderly"]),
             "skinColor": choice(["Pale", "Fair", "Olive", "Tan", "Brown", "Dark Brown", "Ebony"]),
-            "hairColor": choice(["Blonde", "Brown", "Black", "Red", "Ginger", "Orange", "Gray", "White", "Blue",
-                                 "Green", "Purple", "Pink"]),
+            "hairColor": choice(
+                ["Blonde", "Brown", "Black", "Red", "Ginger", "Orange", "Gray", "White", "Blue", "Green", "Purple", "Pink"]
+            ),
             "hairLength": choice(["Bald", "Short", "Medium", "Long"]),
             "hairType": choice(["Straight", "Wavy", "Curly", "Coiled", "Dreadlocks", "Braided", "Afro"]),
-            "facialHair": choice(["", "Clean-shaven", "Stubble", "Short beard", "Long beard", "Mustache", "Goatee",
-                                  "Sideburns"]),
-            "eyeColor": choice(["Brown", "Blue", "Green", "Hazel", "Gray", "Amber", "Violet", "Gold", "Silver", "Red",
-                                "Turquoise"])
+            "facialHair": choice(["", "Clean-shaven", "Stubble", "Short beard", "Long beard", "Mustache", "Goatee", "Sideburns"]),
+            "eyeColor": choice(["Brown", "Blue", "Green", "Hazel", "Gray", "Amber", "Violet", "Gold", "Silver", "Red", "Turquoise"]),
         }
 
     @async_retry()
@@ -228,10 +206,7 @@ class Storychain(Base):
         timeout = 120
 
         while True:
-            response = await self.browser.get(
-                url=f'https://api.storychain.ai/characters/{char_id}',
-                cookies=self.cookies
-            )
+            response = await self.browser.get(url=f"https://api.storychain.ai/characters/{char_id}", cookies=self.cookies)
             data = response.json()
             logger.debug(f"{self.wallet} Wait for character status: {data}")
 
@@ -245,12 +220,12 @@ class Storychain(Base):
     @async_retry()
     async def storychain_choose_character(self, char_id: str, images_amount: int):
         response = await self.browser.post(
-            url='https://api.storychain.ai/characters/choose',
+            url="https://api.storychain.ai/characters/choose",
             json={
                 "id": char_id,
                 "index": randint(0, images_amount - 1),
             },
-            cookies=self.cookies
+            cookies=self.cookies,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Choose character response: {data}")
@@ -261,12 +236,12 @@ class Storychain(Base):
     @async_retry()
     async def storychain_publish_character(self, char_id: str, first_name: str):
         response = await self.browser.post(
-            url='https://api.storychain.ai/characters/publish',
+            url="https://api.storychain.ai/characters/publish",
             json={
                 "id": char_id,
                 "name": first_name,
             },
-            cookies=self.cookies
+            cookies=self.cookies,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Publish character response: {data}")
@@ -277,12 +252,12 @@ class Storychain(Base):
     @async_retry()
     async def storychain_create_character_story(self, char_id: str):
         response = await self.browser.post(
-            url='https://api.storychain.ai/stories/me/create',
+            url="https://api.storychain.ai/stories/me/create",
             json={
                 "id": char_id,
                 "prompt": self.faker.text(randint(15, 30))[:-1],
             },
-            cookies=self.cookies
+            cookies=self.cookies,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Create character story response: {data}")
@@ -293,7 +268,7 @@ class Storychain(Base):
     @async_retry()
     async def storychain_get_sign_data(self):
         response = await self.browser.get(
-            url='https://api.storychain.ai/thirdweb/login',
+            url="https://api.storychain.ai/thirdweb/login",
             params={
                 "address": self.client.account.address,
                 "chainId": "123420001114",
@@ -308,11 +283,11 @@ class Storychain(Base):
     @async_retry()
     async def storychain_login(self, sign_data: dict, signature: str):
         response = await self.browser.post(
-            url='https://api.storychain.ai/thirdweb/login',
+            url="https://api.storychain.ai/thirdweb/login",
             json={
                 "signature": signature,
                 "payload": sign_data,
-            }
+            },
         )
         data = response.json()
         logger.debug(f"{self.wallet} Login response: {data}")

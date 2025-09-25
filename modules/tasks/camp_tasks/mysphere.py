@@ -1,17 +1,16 @@
-from datetime import datetime, timezone
 from random import randint
-from loguru import logger
-from faker import Faker
-from web3.types import TxParams
-from eth_account.messages import encode_defunct
 
+from faker import Faker
+from loguru import logger
+from web3.types import TxParams
+
+from data.models import Contracts
+from data.settings import Settings
+from libs.base import Base
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks, TxArgs
-from data.settings import Settings
-from data.models import Contracts
-from utils.db_api.models import Wallet
 from utils.browser import Browser
-from libs.base import Base
+from utils.db_api.models import Wallet
 
 
 class MySphere(Base):
@@ -47,7 +46,6 @@ class MySphere(Base):
         logger.success(f"{self.wallet} Successfully completed MySphere tasks")
         return True
 
-
     async def create_post(self):
         contract = await self.client.contracts.get(contract_address=Contracts.MYSPHERE_POST)
         tx_label = "create MySphere post"
@@ -55,15 +53,8 @@ class MySphere(Base):
         post_content = Faker().text(randint(15, 30))[:-1]
         args = TxArgs(contentHash=post_content)
         data = contract.encode_abi("createPost", args=(args.tuple()))
-        tx_params = TxParams(
-            to=Contracts.MYSPHERE_POST.address,
-            data=data
-        )
-        result = await self.execute_transaction(
-            tx_params=tx_params,
-            activity_type=tx_label,
-            retry_count=3
-        )
+        tx_params = TxParams(to=Contracts.MYSPHERE_POST.address, data=data)
+        result = await self.execute_transaction(tx_params=tx_params, activity_type=tx_label, retry_count=3)
 
         if result.success:
             logger.success(f"{self.wallet} Successfully created MySphere post")
@@ -78,15 +69,8 @@ class MySphere(Base):
 
         args = TxArgs()
         data = contract.encode_abi("claim", args=(args.tuple()))
-        tx_params = TxParams(
-            to=Contracts.MYSPHERE_NFT.address,
-            data=data
-        )
-        result = await self.execute_transaction(
-            tx_params=tx_params,
-            activity_type=tx_label,
-            retry_count=3
-        )
+        tx_params = TxParams(to=Contracts.MYSPHERE_NFT.address, data=data)
+        result = await self.execute_transaction(tx_params=tx_params, activity_type=tx_label, retry_count=3)
 
         if result.success:
             logger.success(f"{self.wallet} Successfully claimed MySphere Portal NFT")

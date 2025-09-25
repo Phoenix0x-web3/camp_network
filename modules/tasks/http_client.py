@@ -1,14 +1,16 @@
-from curl_cffi import CurlError
 import asyncio
-import random
 import json
-from typing import Dict, Tuple, Union, Optional
+import random
+from typing import Dict, Optional, Tuple, Union
+
+from curl_cffi import CurlError
 from loguru import logger
 
 from data.settings import Settings
-from utils.db_api.wallet_api import get_wallet_by_private_key
-from utils.db_api.models import Wallet
 from utils.browser import Browser
+from utils.db_api.models import Wallet
+from utils.db_api.wallet_api import get_wallet_by_private_key
+
 from .captcha_handler import CloudflareHandler
 
 
@@ -181,7 +183,7 @@ class BaseHttpClient:
         # Perform request with retries
         for attempt in range(retries):
             try:
-              #  logger.debug(request_kwargs)
+                #  logger.debug(request_kwargs)
                 method_func = getattr(self.browser, method.lower())
                 resp = await method_func(**request_kwargs)
 
@@ -210,14 +212,10 @@ class BaseHttpClient:
 
                 # Check for Cloudflare protection in response
                 if check_cloudflare and ("Just a moment" in response_text):
-                    logger.warning(
-                        f"{self.user} detected Cloudflare protection, attempting to solve captcha..."
-                    )
+                    logger.warning(f"{self.user} detected Cloudflare protection, attempting to solve captcha...")
 
                     # Solve captcha
-                    cf_clearance = await self.handle_captcha_if_needed(
-                        url, response_text
-                    )
+                    cf_clearance = await self.handle_captcha_if_needed(url, response_text)
 
                     if cf_clearance:
                         self.cookies["cf_clearance"] = cf_clearance
@@ -225,9 +223,7 @@ class BaseHttpClient:
                     else:
                         self.captcha_errors += 1
                         if self.captcha_errors >= 3:
-                            logger.error(
-                                f"{self.user} failed to solve captcha after {self.captcha_errors} attempts"
-                            )
+                            logger.error(f"{self.user} failed to solve captcha after {self.captcha_errors} attempts")
                             return False, "CAPTCHA_FAILED"
 
                         # Pause before next attempt
@@ -236,16 +232,12 @@ class BaseHttpClient:
 
                 # Handle errors
                 if 400 <= resp.status_code < 500:
-                    logger.warning(
-                        f"{self.user} received status {resp.status_code} for request {url}"
-                    )
+                    logger.warning(f"{self.user} received status {resp.status_code} for request {url}")
 
                     # Check for authorization issues
                     if resp.status_code == 401 or resp.status_code == 403:
                         if "!DOCTYPE" not in response_text:
-                            logger.error(
-                                f"{self.user} authorization error: {response_text}"
-                            )
+                            logger.error(f"{self.user} authorization error: {response_text}")
                         return False, response_text
 
                     # Check for rate limiting
@@ -255,9 +247,7 @@ class BaseHttpClient:
                         # If not last attempt, wait and retry
                         if attempt < retries - 1:
                             wait_time = random.uniform(10, 30)  # 10-30 seconds
-                            logger.info(
-                                f"{self.user} waiting {int(wait_time)} seconds before next attempt"
-                            )
+                            logger.info(f"{self.user} waiting {int(wait_time)} seconds before next attempt")
                             await asyncio.sleep(wait_time)
                             continue
 
@@ -276,25 +266,17 @@ class BaseHttpClient:
                         return False, response_text
 
                 elif 500 <= resp.status_code < 600:
-                    logger.warning(
-                        f"{self.user} received status {resp.status_code}, retry attempt {attempt + 1}/{retries}"
-                    )
+                    logger.warning(f"{self.user} received status {resp.status_code}, retry attempt {attempt + 1}/{retries}")
                     await asyncio.sleep(2**attempt)  # Exponential backoff
                     continue
 
                 return False, response_text
 
             except CurlError as e:
-                logger.warning(
-                    f"{self.user} connection error during request {url}: {str(e)}"
-                )
+                logger.warning(f"{self.user} connection error during request {url}: {str(e)}")
 
                 # Increment proxy error counter
-                if (
-                    "proxy" in str(e).lower()
-                    or "connection" in str(e).lower()
-                    or "connect" in str(e).lower()
-                ):
+                if "proxy" in str(e).lower() or "connection" in str(e).lower() or "connect" in str(e).lower():
                     self.proxy_errors += 1
 
                     # If proxy error limit exceeded, mark proxy as bad
@@ -309,13 +291,9 @@ class BaseHttpClient:
 
                         # If auto-replace is enabled, try to replace proxy
                         if self.settings.auto_replace_proxy:
-                            success, message = await resource_manager.replace_proxy(
-                                self.user.private_key
-                            )
+                            success, message = await resource_manager.replace_proxy(self.user.private_key)
                             if success:
-                                logger.info(
-                                    f"{self.user} proxy automatically replaced: {message}"
-                                )
+                                logger.info(f"{self.user} proxy automatically replaced: {message}")
                                 # Update proxy for current client
                                 updated_user = get_wallet_by_private_key(private_key=self.user.private_key)
                                 if updated_user:
@@ -325,15 +303,11 @@ class BaseHttpClient:
                                     # Update browser with new proxy
                                     self.browser = Browser(self.user)
                             else:
-                                logger.error(
-                                    f"{self.user} failed to replace proxy: {message}"
-                                )
+                                logger.error(f"{self.user} failed to replace proxy: {message}")
 
                 await asyncio.sleep(2**attempt)  # Exponential backoff
                 continue
 
             except Exception as e:
-                logger.error(
-                    f"{self.user} unexpected error during request {url}: {str(e)}"
-                )
+                logger.error(f"{self.user} unexpected error during request {url}: {str(e)}")
                 return False, str(e)

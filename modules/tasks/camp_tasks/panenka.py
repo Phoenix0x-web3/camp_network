@@ -1,25 +1,22 @@
-import asyncio
-import json
-from loguru import logger
 from faker import Faker
+from loguru import logger
 
+from libs.base import Base
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks
-from data.settings import Settings
-from utils.db_api.models import Wallet
-from utils.browser import Browser
-from utils.retry import async_retry
-from utils.imap import Mail, MailTimedOut
-from utils.encryption import format_password
-from libs.base import Base
 from modules.tasks.captcha_handler import CloudflareHandler
+from utils.browser import Browser
+from utils.db_api.models import Wallet
+from utils.encryption import format_password
+from utils.imap import Mail, MailTimedOut
+from utils.retry import async_retry
 
 
 class Panenka(Base):
     def __init__(self, wallet: Wallet) -> None:
         """Initialize Panenka task client"""
         super().__init__(wallet=wallet, client=Client(private_key=wallet.private_key, network=Networks.Camp))
-        self.__module_name__ = "Panenka" 
+        self.__module_name__ = "Panenka"
         self.browser = Browser(wallet=wallet)
         self.session_headers = {
             "Origin": "https://panenkafc.gg",
@@ -82,16 +79,12 @@ class Panenka(Base):
         cloudflare = CloudflareHandler(wallet=self.wallet)
         token = await cloudflare.handle_turnstile_captcha(websiteURL="https://panenkafc.gg/", websiteKey="0x4AAAAAABh8fBw-gFrcIbzt")
         if token:
-            self.captcha_token = token 
+            self.captcha_token = token
 
         response = await self.browser.post(
-            url='https://prod-api.panenkafc.gg/api/v1/auth/login',
-            json={
-                "email": login,
-                "password": password,
-                "turnstileToken": self.captcha_token	
-            },
-            headers=self.session_headers
+            url="https://prod-api.panenkafc.gg/api/v1/auth/login",
+            json={"email": login, "password": password, "turnstileToken": self.captcha_token},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Login response: {data}")
@@ -108,18 +101,18 @@ class Panenka(Base):
         cloudflare = CloudflareHandler(wallet=self.wallet)
         token = await cloudflare.panenka_handle()
         if token:
-            self.captcha_token = token 
+            self.captcha_token = token
         response = await self.browser.post(
-            url='https://prod-api.panenkafc.gg/api/v1/auth',
+            url="https://prod-api.panenkafc.gg/api/v1/auth",
             json={
                 "firstName": self.faker.first_name(),
                 "lastName": self.faker.last_name(),
                 "email": login,
                 "password": password,
                 "referralCode": None,
-                "turnstileToken": self.captcha_token	
+                "turnstileToken": self.captcha_token,
             },
-            headers=self.session_headers
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Register response: {data}")
@@ -130,13 +123,11 @@ class Panenka(Base):
         raise Exception(f"Unexpected response: {data}")
 
     @async_retry()
-    async def panenka_connect_wallet(self,):
+    async def panenka_connect_wallet(
+        self,
+    ):
         response = await self.browser.post(
-            url='https://prod-api.panenkafc.gg/api/v1/wallets/para',
-            json={
-                'address': self.wallet.address
-            },
-            headers=self.session_headers
+            url="https://prod-api.panenkafc.gg/api/v1/wallets/para", json={"address": self.wallet.address}, headers=self.session_headers
         )
         data = response.json()
         logger.debug(f"{self.wallet} Connect response: {data}")
@@ -150,12 +141,12 @@ class Panenka(Base):
     async def panenka_request_mail_code(self, login: str):
         """Request verification code for email"""
         response = await self.browser.post(
-            url='https://prod-api.panenkafc.gg/api/v1/otp/generate',
+            url="https://prod-api.panenkafc.gg/api/v1/otp/generate",
             json={
                 "purpose": "email_verification",
                 "email": login,
             },
-            headers=self.session_headers
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Request mail code response: {data}")
@@ -167,13 +158,9 @@ class Panenka(Base):
     async def panenka_verify_mail(self, login: str, code: str):
         """Verify email with code"""
         response = await self.browser.post(
-            url='https://prod-api.panenkafc.gg/api/v1/otp/validate',
-            json={
-                "otp": code,
-                "purpose": "email_verification",
-                "email": login
-            },
-            headers=self.session_headers
+            url="https://prod-api.panenkafc.gg/api/v1/otp/validate",
+            json={"otp": code, "purpose": "email_verification", "email": login},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Verify mail response: {data}")
@@ -189,8 +176,7 @@ class Panenka(Base):
         for attempt in range(2):
             try:
                 mail_body = await self.mail_waiter.find_mail(
-                    msg_from=["welcome@panenkafc.gg"],
-                    part_subject="Your Panenka FC Account Verification"
+                    msg_from=["welcome@panenkafc.gg"], part_subject="Your Panenka FC Account Verification"
                 )
                 verify_code = mail_body.find("span").text
                 return verify_code

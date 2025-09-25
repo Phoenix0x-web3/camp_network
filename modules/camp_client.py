@@ -1,18 +1,18 @@
-from typing import Dict
 import random
+from typing import Dict
+
 from loguru import logger
 
 from data.settings import Settings
-from utils.db_api.models import Wallet
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks
-
 from modules.tasks.authorization import AuthClient
-from modules.tasks.quests import QuestClient
-from modules.tasks.twitter_camp import TwitterService
-from modules.tasks.referral_manager import load_ref_codes, get_referral_code_for_registration
 from modules.tasks.faucet import Faucet
 from modules.tasks.onchain_client import CampOnchain
+from modules.tasks.quests import QuestClient
+from modules.tasks.referral_manager import get_referral_code_for_registration, load_ref_codes
+from modules.tasks.twitter_camp import TwitterService
+from utils.db_api.models import Wallet
 
 
 class CampNetworkClient:
@@ -36,8 +36,6 @@ class CampNetworkClient:
 
         # Quest IDs for easy access
         self.QUEST_IDS = self.quest_client.QUEST_IDS
-
-
 
     async def login(self):
         """
@@ -64,12 +62,9 @@ class CampNetworkClient:
                 referral_code = random.choice(file_codes) if file_codes else None
             else:
                 # Use standard logic for selecting a code
-                referral_code = await get_referral_code_for_registration(
-                )
+                referral_code = await get_referral_code_for_registration()
 
-        success, response = await self.auth_client.login_with_referral(
-            referral_code=referral_code
-        )
+        success, response = await self.auth_client.login_with_referral(referral_code=referral_code)
 
         if success:
             self.quest_client.cookies = self.auth_client.cookies
@@ -79,9 +74,7 @@ class CampNetworkClient:
         else:
             return False, response
 
-    async def complete_all_quests(
-        self, retry_failed: bool = True, max_retries: int = 3
-    ) -> Dict[str, bool]:
+    async def complete_all_quests(self, retry_failed: bool = True, max_retries: int = 3) -> Dict[str, bool]:
         """
         Complete all incomplete quests with error handling
 
@@ -104,25 +97,18 @@ class CampNetworkClient:
 
             if not auth_result[0]:  # Check success status
                 if isinstance(auth_result[1], str) and auth_result[1] == "RATE_LIMIT":
-                    logger.warning(
-                        f"{self.user} account on hold due to rate limit"
-                    )
+                    logger.warning(f"{self.user} account on hold due to rate limit")
                     return {"status": "RATE_LIMITED"}
 
-                logger.error(
-                    f"{self.user} failed to authorize, quest execution impossible"
-                )
+                logger.error(f"{self.user} failed to authorize, quest execution impossible")
                 return {}
 
         # Execute all quests
-        quests = await self.quest_client.complete_all_quests(
-            retry_failed=retry_failed, max_retries=max_retries
-        )
+        quests = await self.quest_client.complete_all_quests(retry_failed=retry_failed, max_retries=max_retries)
         await self.update_points()
         return quests
 
-    async def complete_twitter_quests(
-        self):
+    async def complete_twitter_quests(self):
         incomplete_quests = await self.twitter_client.get_incomplete_quests()
 
         if not incomplete_quests:
@@ -135,14 +121,10 @@ class CampNetworkClient:
             if not auth_result[0]:  # Check success status
                 # If rate limit error received
                 if isinstance(auth_result[1], str) and auth_result[1] == "RATE_LIMIT":
-                    logger.warning(
-                        f"{self.user} account on hold due to rate limit"
-                    )
+                    logger.warning(f"{self.user} account on hold due to rate limit")
                     return {"status": "RATE_LIMITED"}
 
-                logger.error(
-                    f"{self.user} failed to authorize, quest execution impossible"
-                )
+                logger.error(f"{self.user} failed to authorize, quest execution impossible")
                 return {}
 
         # Execute all quests
@@ -154,13 +136,9 @@ class CampNetworkClient:
         await self.complete_all_quests()
         await self.complete_twitter_quests()
         return
-    
+
     async def complete_all_actions(self):
-        functions = [
-            self.complete_all_quests,
-            self.complete_twitter_quests,
-            self.complete_onchain
-        ]
+        functions = [self.complete_all_quests, self.complete_twitter_quests, self.complete_onchain]
         random.shuffle(functions)
         for func in functions:
             await func()
@@ -171,19 +149,15 @@ class CampNetworkClient:
             logger.info(f"{self.user} not authorized, performing authorization")
             auth_result = await self.login()
 
-            if not auth_result[0]: 
+            if not auth_result[0]:
                 if isinstance(auth_result[1], str) and auth_result[1] == "RATE_LIMIT":
-                    logger.warning(
-                        f"{self.user} account on hold due to rate limit"
-                    )
+                    logger.warning(f"{self.user} account on hold due to rate limit")
                     return {"status": "RATE_LIMITED"}
 
-                logger.error(
-                    f"{self.user} failed to authorize, quest execution impossible"
-                )
+                logger.error(f"{self.user} failed to authorize, quest execution impossible")
                 return False
         return await self.quest_client.get_and_update_points()
-    
+
     async def complete_faucet(self):
         connect = await self.auth_client.check_connect()
         if not connect:
@@ -211,4 +185,3 @@ class CampNetworkClient:
         faucet = await self.complete_faucet()
         if faucet:
             return await self.onchain_client.handle_actions()
-

@@ -1,5 +1,5 @@
-from typing import Optional, Any
 from datetime import datetime, timedelta
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -155,9 +155,7 @@ class Tweet(BaseModel):
             "reply_count": legacy_data["reply_count"],
             "user": user.model_dump(),
             "quoted_tweet": quoted_tweet.model_dump() if quoted_tweet else None,
-            "retweeted_tweet": (
-                retweeted_tweet.model_dump() if retweeted_tweet else None
-            ),
+            "retweeted_tweet": (retweeted_tweet.model_dump() if retweeted_tweet else None),
             "url": url,
             "raw_data": data,
         }

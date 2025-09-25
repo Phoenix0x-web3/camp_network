@@ -1,27 +1,28 @@
 import asyncio
-from time import time
-from loguru import logger
-from bs4 import BeautifulSoup
 import re
 from json import loads
-from eth_account.messages import encode_defunct
+from time import time
 
-from libs.eth_async.client import Client
-from libs.eth_async.data.models import Networks,TokenAmount
-from data.settings import Settings
+from bs4 import BeautifulSoup
+from eth_account.messages import encode_defunct
+from loguru import logger
+
 from data.models import Contracts
-from utils.db_api.models import Wallet
-from utils.browser import Browser
-from utils.retry import async_retry
-from modules.tasks.captcha_handler import CloudflareHandler
+from data.settings import Settings
 from libs.base import Base
+from libs.eth_async.client import Client
+from libs.eth_async.data.models import Networks, TokenAmount
+from modules.tasks.captcha_handler import CloudflareHandler
+from utils.browser import Browser
+from utils.db_api.models import Wallet
+from utils.retry import async_retry
 
 
 class Scoreplay(Base):
     def __init__(self, wallet: Wallet) -> None:
         """Initialize Scoreplay task client"""
         super().__init__(wallet=wallet, client=Client(private_key=wallet.private_key, network=Networks.Camp))
-        self.__module_name__ = "Scoreplay" 
+        self.__module_name__ = "Scoreplay"
         self.browser = Browser(wallet=wallet)
         self.session_headers = {
             "Origin": "https://app.scoreplay.xyz",
@@ -45,16 +46,12 @@ class Scoreplay(Base):
         old_balance = await self.client.wallet.balance(token=Contracts.TSCORE)
         tokens_resp = await self.scoreplay_request_tokens()
         if tokens_resp:
-            success = await self.wait_balance(
-                token=Contracts.TSCORE,
-                old_balance=old_balance,
-                timeout=60
-            )
+            success = await self.wait_balance(token=Contracts.TSCORE, old_balance=old_balance, timeout=60)
             if not success:
                 logger.error(f"{self.wallet} Balance did not update after reclaim")
                 return False
 
-    async def wait_balance(self, token, old_balance, timeout = 60):
+    async def wait_balance(self, token, old_balance, timeout=60):
         time_now = time()
         while time_now + timeout > time():
             balance = await self.client.wallet.balance(token=token)
@@ -63,7 +60,6 @@ class Scoreplay(Base):
                 return True
             await asyncio.sleep(5)
         return False
-
 
     async def authorize(self):
         """Authorize with Ethereum signature"""
@@ -98,10 +94,10 @@ class Scoreplay(Base):
             await self.get_actual_actions()
 
         response = await self.browser.post(
-            url='https://app.scoreplay.xyz/rewards',
+            url="https://app.scoreplay.xyz/rewards",
             json=[{"address": self.client.account.address}],
             headers={"Next-Action": self.actions["generatePayload"], **self.session_headers},
-            cookies=self.session_cookies
+            cookies=self.session_cookies,
         )
         if "<!DOCTYPE html>" in response.text:
             await self.get_actual_actions(response.text)
@@ -120,13 +116,10 @@ class Scoreplay(Base):
     async def scoreplay_login(self, sign_data: dict, signature: str):
         """Login with signature"""
         response = await self.browser.post(
-            url='https://app.scoreplay.xyz/rewards',
-            json=[{
-                "signature": signature,
-                "payload": {k: v for k, v in sign_data.items() if v != "$undefined"}
-            }, ""],
+            url="https://app.scoreplay.xyz/rewards",
+            json=[{"signature": signature, "payload": {k: v for k, v in sign_data.items() if v != "$undefined"}}, ""],
             headers={"Next-Action": self.actions["doLogin"], **self.session_headers},
-            cookies=self.session_cookies
+            cookies=self.session_cookies,
         )
         if "<!DOCTYPE html>" in response.text:
             await self.get_actual_actions(response.text)
@@ -147,14 +140,13 @@ class Scoreplay(Base):
         """Fetch and update Next.js actions"""
         logger.debug(f"{self.wallet} Updating Scoreplay site build...")
         re_pattern = r'createServerReference\)\("([a-f0-9]+)".*?"([a-zA-Z_][a-zA-Z0-9_]*)"\)'
-        actions = {
-            action_name: None
-            for action_name in ["generatePayload", "doLogin"]
-        }
+        actions = {action_name: None for action_name in ["generatePayload", "doLogin"]}
 
         if not index_response:
             logger.debug(self.session_headers)
-            response = await self.browser.get(url="https://app.scoreplay.xyz/rewards", headers=self.session_headers, cookies=self.session_cookies)
+            response = await self.browser.get(
+                url="https://app.scoreplay.xyz/rewards", headers=self.session_headers, cookies=self.session_cookies
+            )
             index_response = response.text
             if "Just a moment..." in response.text or "!DOCTYPE" in response.text:
                 cloudflare_handler = CloudflareHandler(wallet=self.wallet)
@@ -166,7 +158,9 @@ class Scoreplay(Base):
                 if cf_clearance:
                     self.session_cookies["cf_clearance"] = cf_clearance
                     logger.debug(f"{self.wallet} Successfully solved Cloudflare")
-                    response = await self.browser.get(url="https://app.scoreplay.xyz/rewards", headers=self.session_headers, cookies=self.session_cookies)
+                    response = await self.browser.get(
+                        url="https://app.scoreplay.xyz/rewards", headers=self.session_headers, cookies=self.session_cookies
+                    )
                     index_response = response.text
                 else:
                     raise Exception("Can't resolve captcha")
@@ -175,16 +169,18 @@ class Scoreplay(Base):
         soup = BeautifulSoup(index_response, "lxml")
         script_paths = [
             script["src"]
-            for script in soup.find_all('script')
+            for script in soup.find_all("script")
             if (
-                script.get("src") and
-                script["src"].startswith("/_next/static/chunks/") and
-                not script["src"].startswith("/_next/static/chunks/app")
+                script.get("src")
+                and script["src"].startswith("/_next/static/chunks/")
+                and not script["src"].startswith("/_next/static/chunks/app")
             )
         ]
 
         for script_path in script_paths:
-            response = await self.browser.get(url=f"https://app.scoreplay.xyz{script_path}", headers=self.session_headers, cookies=self.session_cookies)
+            response = await self.browser.get(
+                url=f"https://app.scoreplay.xyz{script_path}", headers=self.session_headers, cookies=self.session_cookies
+            )
             matches = re.findall(re_pattern, response.text)
             for match in matches:
                 if match[1] in actions:
@@ -195,43 +191,41 @@ class Scoreplay(Base):
                 return actions
         raise Exception("Failed to find all Scoreplay Next-Actions")
 
-
     @async_retry()
-    async def scoreplay_request_tokens(self): 
+    async def scoreplay_request_tokens(self):
         """Request tScore tokens"""
         cloudflare = CloudflareHandler(wallet=self.wallet)
-        token = await cloudflare.handle_turnstile_captcha(websiteURL="https://app.scoreplay.xyz/api/reclaim", websiteKey="0x4AAAAAABgcc9z2p-IJlyu-")
+        token = await cloudflare.handle_turnstile_captcha(
+            websiteURL="https://app.scoreplay.xyz/api/reclaim", websiteKey="0x4AAAAAABgcc9z2p-IJlyu-"
+        )
         headers = {
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.9',
-            'cache-control': 'no-cache',
-            'content-type': 'text/plain;charset=UTF-8',
-            'origin': 'https://app.scoreplay.xyz',
-            'pragma': 'no-cache',
-            'priority': 'u=1, i',
-            'referer': 'https://app.scoreplay.xyz/rewards',
-            'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-            'sec-ch-ua-arch': '"x86"',
-            'sec-ch-ua-bitness': '"64"',
-            'sec-ch-ua-full-version': '"139.0.7258.128"',
-            'sec-ch-ua-full-version-list': '"Not;A=Brand";v="99.0.0.0", "Google Chrome";v="139.0.7258.128", "Chromium";v="139.0.7258.128"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-model': '""',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-ch-ua-platform-version': '"10.0.0"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-origin',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+            "accept": "*/*",
+            "accept-language": "en-US,en;q=0.9",
+            "cache-control": "no-cache",
+            "content-type": "text/plain;charset=UTF-8",
+            "origin": "https://app.scoreplay.xyz",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "https://app.scoreplay.xyz/rewards",
+            "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+            "sec-ch-ua-arch": '"x86"',
+            "sec-ch-ua-bitness": '"64"',
+            "sec-ch-ua-full-version": '"139.0.7258.128"',
+            "sec-ch-ua-full-version-list": '"Not;A=Brand";v="99.0.0.0", "Google Chrome";v="139.0.7258.128", "Chromium";v="139.0.7258.128"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-model": '""',
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-ch-ua-platform-version": '"10.0.0"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
         }
 
         json_data = {"token": f"{token}"}
         logger.debug(json_data)
         response = await self.browser.post(
-            url='https://app.scoreplay.xyz/api/reclaim',
-            json=json_data,
-            headers=headers,
-            cookies=self.session_cookies
+            url="https://app.scoreplay.xyz/api/reclaim", json=json_data, headers=headers, cookies=self.session_cookies
         )
 
         data = response.json()

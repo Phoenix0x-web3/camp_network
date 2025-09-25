@@ -1,27 +1,25 @@
 import asyncio
 import random
-from datetime import datetime, timedelta
 
-from curl_cffi import AsyncSession
 from loguru import logger
 
+from data.settings import Settings
 from functions.controller import Controller
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks
 from utils.db_api.models import Wallet
 from utils.db_api.wallet_api import db
-from data.settings import Settings
 from utils.encryption import check_encrypt_param
 
 
-async def execute(wallets : Wallet, task_func, timeout_hours : int = 0):
+async def execute(wallets: Wallet, task_func, timeout_hours: int = 0):
     while True:
         semaphore = asyncio.Semaphore(min(len(wallets), Settings().threads))
 
         if Settings().shuffle_wallets:
             random.shuffle(wallets)
-            
-        async def sem_task(wallet : Wallet):
+
+        async def sem_task(wallet: Wallet):
             async with semaphore:
                 try:
                     if wallet.account_blocked:
@@ -36,10 +34,11 @@ async def execute(wallets : Wallet, task_func, timeout_hours : int = 0):
 
         if timeout_hours == 0:
             break
-        
+
         logger.info(f"Sleeping for {timeout_hours} hours before the next iteration")
         await asyncio.sleep(timeout_hours * 60 * 60)
-        
+
+
 async def activity(action: int):
     check_encrypt_param()
 
@@ -47,10 +46,10 @@ async def activity(action: int):
         check_password_wallet = db.one(Wallet, Wallet.id == 1)
         client = Client(private_key=check_password_wallet.private_key)
 
-    except Exception as e:
+    except Exception:
         logger.error(f"Decryption Failed | Wrong Password")
         return
-    
+
     all_wallets = db.all(Wallet, Wallet.account_blocked == False)
 
     # Filter wallets if EXACT_WALLETS_TO_USE is defined
@@ -74,10 +73,12 @@ async def activity(action: int):
     elif action == 7:
         await execute(wallets, update_points)
 
+
 async def random_sleep_before_start(wallet):
     random_sleep = random.randint(Settings().random_pause_start_wallet_min, Settings().random_pause_start_wallet_max)
     logger.info(f"{wallet} sleep {random_sleep} seconds before start actions")
     await asyncio.sleep(random_sleep)
+
 
 async def complete_all_actions(wallet):
     await random_sleep_before_start(wallet=wallet)
@@ -87,6 +88,7 @@ async def complete_all_actions(wallet):
 
     await controller.complete_quests_and_onchain()
 
+
 async def complete_all_quests(wallet):
     await random_sleep_before_start(wallet=wallet)
     client = Client(private_key=wallet.private_key, proxy=wallet.proxy, network=Networks.Camp)
@@ -94,6 +96,7 @@ async def complete_all_quests(wallet):
     controller = Controller(client=client, wallet=wallet)
 
     await controller.complete_tw_and_regular_quests()
+
 
 async def complete_regular_quests(wallet):
     await random_sleep_before_start(wallet=wallet)
@@ -103,6 +106,7 @@ async def complete_regular_quests(wallet):
 
     await controller.complete_regular_quests()
 
+
 async def complete_twitter_quests(wallet):
     await random_sleep_before_start(wallet=wallet)
     client = Client(private_key=wallet.private_key, proxy=wallet.proxy, network=Networks.Camp)
@@ -110,6 +114,7 @@ async def complete_twitter_quests(wallet):
     controller = Controller(client=client, wallet=wallet)
 
     await controller.complete_twitter_quests()
+
 
 async def complete_onchain(wallet):
     await random_sleep_before_start(wallet=wallet)
@@ -119,6 +124,7 @@ async def complete_onchain(wallet):
 
     await controller.complete_onchain()
 
+
 async def complete_faucet(wallet):
     await random_sleep_before_start(wallet=wallet)
     client = Client(private_key=wallet.private_key, proxy=wallet.proxy, network=Networks.Camp)
@@ -127,6 +133,7 @@ async def complete_faucet(wallet):
 
     await controller.complete_faucet()
 
+
 async def update_points(wallet):
     await random_sleep_before_start(wallet=wallet)
     client = Client(private_key=wallet.private_key, proxy=wallet.proxy, network=Networks.Camp)
@@ -134,4 +141,3 @@ async def update_points(wallet):
     controller = Controller(client=client, wallet=wallet)
 
     await controller.update_points()
-

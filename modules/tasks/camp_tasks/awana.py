@@ -1,21 +1,18 @@
-import asyncio
-from web3.types import TxParams
 from loguru import logger
 
+from libs.base import Base
 from libs.eth_async.client import Client
 from libs.eth_async.data.models import Networks
-from data.models import Contracts
-from utils.db_api.models import Wallet
 from utils.browser import Browser
-from utils.retry import async_retry
+from utils.db_api.models import Wallet
 from utils.imap import Mail, MailTimedOut
-from libs.base import Base
+from utils.retry import async_retry
 
 
 class Awana(Base):
     def __init__(self, wallet: Wallet) -> None:
         super().__init__(wallet=wallet, client=Client(private_key=wallet.private_key, network=Networks.Camp))
-        self.__module_name__ = "Awana"  
+        self.__module_name__ = "Awana"
         self.browser = Browser(wallet=wallet)
         self.session_headers = {
             "Origin": "https://tech.awana.world",
@@ -25,7 +22,6 @@ class Awana(Base):
         self.quest_info = {}
 
     async def run(self):
-
         if not self.mail_waiter or not self.mail_waiter.authed:
             logger.error(f"{self.wallet} Invalid or missing email data")
             return False
@@ -65,12 +61,7 @@ class Awana(Base):
     @async_retry()
     async def awana_request_mail(self, login: str):
         response = await self.browser.post(
-            url='https://tech.awana.world/apis/user/sendWeb',
-            json={
-                "email": login,
-                "invitationCode": ""
-            },
-            headers=self.session_headers
+            url="https://tech.awana.world/apis/user/sendWeb", json={"email": login, "invitationCode": ""}, headers=self.session_headers
         )
         data = response.json()
 
@@ -85,13 +76,9 @@ class Awana(Base):
     @async_retry()
     async def awana_login_mail(self, login: str, code: str):
         response = await self.browser.post(
-            url='https://tech.awana.world/apis/user/loginWeb',
-            json={
-                "email": login,
-                "code": code,
-                "invitationCode": ""
-            },
-            headers=self.session_headers
+            url="https://tech.awana.world/apis/user/loginWeb",
+            json={"email": login, "code": code, "invitationCode": ""},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Login response: {data}")
@@ -103,9 +90,8 @@ class Awana(Base):
         for attempt in range(2):
             try:
                 mail_body = await self.mail_waiter.find_mail(
-                    msg_from=["no.reply@awana.world", "noreply.2@awana.world", "noreply@awana.world", 
-                              "no_reply@awana.world"],
-                    part_subject="Your verification code is"
+                    msg_from=["no.reply@awana.world", "noreply.2@awana.world", "noreply@awana.world", "no_reply@awana.world"],
+                    part_subject="Your verification code is",
                 )
                 verify_code = mail_body.find("div", class_="verification-code").text
                 return verify_code
@@ -119,10 +105,7 @@ class Awana(Base):
 
     @async_retry()
     async def awana_get_quest_info(self):
-        response = await self.browser.get(
-            url='https://tech.awana.world/apis/user/getQuestInfo',
-            headers=self.session_headers
-        )
+        response = await self.browser.get(url="https://tech.awana.world/apis/user/getQuestInfo", headers=self.session_headers)
         data = response.json()
         logger.debug(f"{self.wallet} Quest info response: {data}")
         if data.get("msg") != "SUCCESS" or not data.get("data"):
@@ -132,13 +115,9 @@ class Awana(Base):
     @async_retry()
     async def awana_connect_wallet(self):
         response = await self.browser.post(
-            url='https://tech.awana.world/apis/user/connectAccount',
-            json={
-                "address": self.client.account.address,
-                "amount": "0.5",
-                "type": "1"
-            },
-            headers=self.session_headers
+            url="https://tech.awana.world/apis/user/connectAccount",
+            json={"address": self.client.account.address, "amount": "0.5", "type": "1"},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Connect wallet response: {data}")
@@ -148,10 +127,7 @@ class Awana(Base):
 
     @async_retry()
     async def awana_request_mint(self):
-        response = await self.browser.post(
-            url='https://tech.awana.world/apis/user/mint',
-            headers=self.session_headers
-        )
+        response = await self.browser.post(url="https://tech.awana.world/apis/user/mint", headers=self.session_headers)
         data = response.json()
         logger.debug(f"{self.wallet} Mint response: {data}")
         if data.get("msg") != "SUCCESS":

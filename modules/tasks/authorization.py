@@ -1,15 +1,17 @@
-import json
 import asyncio
+import json
 import random
 from datetime import datetime
 from typing import Dict, Optional, Tuple
-from loguru import logger
+
 from eth_account.messages import encode_defunct
+from loguru import logger
 
 from data.settings import Settings
 from libs.eth_async.client import Client
 from utils.db_api.wallet_api import update_ref_code
 from utils.imap import Mail
+
 from .http_client import BaseHttpClient
 from .resource_manager import ResourceManager
 
@@ -29,9 +31,7 @@ class AuthClient(BaseHttpClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.client = Client(
-            private_key=self.user.private_key, proxy=self.user.proxy, check_proxy=False
-        )
+        self.client = Client(private_key=self.user.private_key, proxy=self.user.proxy, check_proxy=False)
         # Authentication data
         self.csrf_token = None
         self.nonce = None
@@ -47,9 +47,7 @@ class AuthClient(BaseHttpClient):
             Success status
         """
         try:
-            logger.info(
-                f"{self.user} performing initial request to check Cloudflare protection"
-            )
+            logger.info(f"{self.user} performing initial request to check Cloudflare protection")
 
             success, response = await self.request(
                 url=f"{self.BASE_URL}",
@@ -64,9 +62,7 @@ class AuthClient(BaseHttpClient):
                 return False
 
         except Exception as e:
-            logger.error(
-                f"{self.user} error during initial request: {str(e)}"
-            )
+            logger.error(f"{self.user} error during initial request: {str(e)}")
             return False
 
     async def connect_wallet(self) -> bool:
@@ -121,9 +117,7 @@ class AuthClient(BaseHttpClient):
             }
         )
 
-        success, response = await self.request(
-            url=self.DYNAMIC_NONCE_URL, method="GET", headers=headers
-        )
+        success, response = await self.request(url=self.DYNAMIC_NONCE_URL, method="GET", headers=headers)
 
         if success and isinstance(response, dict) and "nonce" in response:
             self.nonce = response["nonce"]
@@ -149,9 +143,7 @@ class AuthClient(BaseHttpClient):
             }
         )
 
-        success, response = await self.request(
-            url=self.AUTH_CSRF_URL, method="GET", headers=headers
-        )
+        success, response = await self.request(url=self.AUTH_CSRF_URL, method="GET", headers=headers)
 
         if success and isinstance(response, dict) and "csrfToken" in response:
             self.csrf_token = response["csrfToken"]
@@ -159,14 +151,8 @@ class AuthClient(BaseHttpClient):
             return True
         else:
             # Check for rate limit error
-            if (
-                isinstance(response, dict)
-                and response.get("message")
-                == "Too many requests, please try again later."
-            ):
-                logger.warning(
-                    f"{self.user} rate limit exceeded while retrieving CSRF token"
-                )
+            if isinstance(response, dict) and response.get("message") == "Too many requests, please try again later.":
+                logger.warning(f"{self.user} rate limit exceeded while retrieving CSRF token")
                 return "RATE_LIMIT"
             else:
                 logger.error(f"{self.user} failed to retrieve CSRF token: {response}")
@@ -234,9 +220,7 @@ class AuthClient(BaseHttpClient):
             Success status and response
         """
         if not self.csrf_token or not self.nonce:
-            logger.error(
-                f"{self.user} attempting authentication without CSRF token or nonce"
-            )
+            logger.error(f"{self.user} attempting authentication without CSRF token or nonce")
             return False, False
 
         # Sign message
@@ -267,9 +251,7 @@ class AuthClient(BaseHttpClient):
             }
         )
 
-        success, response = await self.request(
-            url=self.AUTH_CALLBACK_URL, method="POST", data=form_data, headers=headers
-        )
+        success, response = await self.request(url=self.AUTH_CALLBACK_URL, method="POST", data=form_data, headers=headers)
 
         if success:
             # Check for session token in cookies
@@ -299,26 +281,15 @@ class AuthClient(BaseHttpClient):
             }
         )
 
-        success, response = await self.request(
-            url=self.AUTH_SESSION_URL, method="GET", headers=headers
-        )
+        success, response = await self.request(url=self.AUTH_SESSION_URL, method="GET", headers=headers)
 
-        if (
-            success
-            and isinstance(response, dict)
-            and "user" in response
-            and "id" in response["user"]
-        ):
+        if success and isinstance(response, dict) and "user" in response and "id" in response["user"]:
             self.session_data = response
             self.user_id = response["user"]["id"]
-            logger.info(
-                f"{self.user} retrieved session info, user ID: {self.user_id}"
-            )
+            logger.info(f"{self.user} retrieved session info, user ID: {self.user_id}")
             return True
         else:
-            logger.error(
-                f"{self.user} failed to retrieve session info: {response}"
-            )
+            logger.error(f"{self.user} failed to retrieve session info: {response}")
             return False
 
     async def get_user_info(self):
@@ -330,27 +301,19 @@ class AuthClient(BaseHttpClient):
             }
         )
         params = {
-            'includeDelegation': 'false',
-            'walletAddress': f'{self.client.account.address}',
-            'websiteId': '32afc5c9-f0fb-4938-9572-775dee0b4a2b',
-            'organizationId': '26a1764f-5637-425e-89fa-2f3fb86e758c'
+            "includeDelegation": "false",
+            "walletAddress": f"{self.client.account.address}",
+            "websiteId": "32afc5c9-f0fb-4938-9572-775dee0b4a2b",
+            "organizationId": "26a1764f-5637-425e-89fa-2f3fb86e758c",
         }
 
-        success, response = await self.request(
-            url=self.USER_INFO_URL, method="GET", headers=headers, params=params
-        )
+        success, response = await self.request(url=self.USER_INFO_URL, method="GET", headers=headers, params=params)
 
-        if (
-            success
-            and isinstance(response, dict)
-            and "userMetadata" in response["data"][0]
-        ):
+        if success and isinstance(response, dict) and "userMetadata" in response["data"][0]:
             self.user_info = response["data"][0]
             return True
         else:
-            logger.error(
-                f"{self.user} failed to retrieve user info: {response}"
-            )
+            logger.error(f"{self.user} failed to retrieve user info: {response}")
             return False
 
     async def get_email_info(self):
@@ -379,10 +342,12 @@ class AuthClient(BaseHttpClient):
             url = f"{self.BASE_URL}/api/users/{self.user_id}"
             json_data = {"emailAddress": email}
 
-            headers = await self.get_headers({
-                "Content-Type": "application/json",
-                "Origin": "https://loyalty.campnetwork.xyz",
-            })
+            headers = await self.get_headers(
+                {
+                    "Content-Type": "application/json",
+                    "Origin": "https://loyalty.campnetwork.xyz",
+                }
+            )
 
             success, response = await self.request(
                 url=url,
@@ -419,7 +384,7 @@ class AuthClient(BaseHttpClient):
             mail_waiter = Mail(mail_data=self.user.email_data)
             if not mail_waiter.authed:
                 return False
-            email_login = mail_waiter.mail_login 
+            email_login = mail_waiter.mail_login
 
             if not await self.request_email_code(email=email_login):
                 return False
@@ -429,13 +394,15 @@ class AuthClient(BaseHttpClient):
                 part_subject="Verify email - Climb to the Summit marketplace",
             )
 
-            verify_link = mail_body.find('a')["href"].replace("http://", "https://")
+            verify_link = mail_body.find("a")["href"].replace("http://", "https://")
             logger.info(f"{self.user} extracted verification link: {verify_link[:50]}...")
 
-            headers = await self.get_headers({
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Referer": "https://loyalty.campnetwork.xyz/",
-            })
+            headers = await self.get_headers(
+                {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Referer": "https://loyalty.campnetwork.xyz/",
+                }
+            )
 
             success, response = await self.request(
                 url=verify_link,
@@ -481,9 +448,7 @@ class AuthClient(BaseHttpClient):
             if csrf_result == "RATE_LIMIT":
                 # Put account in timeout for 5-10 minutes (300-600 seconds)
                 timeout_duration = random.uniform(300, 600)
-                logger.warning(
-                    f"{self.user} rate limit reached, waiting {int(timeout_duration)} seconds before retry"
-                )
+                logger.warning(f"{self.user} rate limit reached, waiting {int(timeout_duration)} seconds before retry")
                 await asyncio.sleep(timeout_duration)
 
                 # Retry CSRF token retrieval
@@ -518,9 +483,7 @@ class AuthClient(BaseHttpClient):
             Referral code or None in case of error
         """
         if not self.user_id:
-            logger.error(
-                f"{self.user} attempting to get referral code without user ID"
-            )
+            logger.error(f"{self.user} attempting to get referral code without user ID")
             return None
 
         try:
@@ -546,22 +509,16 @@ class AuthClient(BaseHttpClient):
 
                 # Save referral code to database
                 try:
-                        update_ref_code(self.user.private_key, ref_code)
+                    update_ref_code(self.user.private_key, ref_code)
                 except Exception as e:
-                    logger.error(
-                        f"{self.user} error saving referral code: {str(e)}"
-                    )
+                    logger.error(f"{self.user} error saving referral code: {str(e)}")
 
                 return ref_code
             else:
-                logger.error(
-                    f"{self.user} failed to retrieve referral code: {response}"
-                )
+                logger.error(f"{self.user} failed to retrieve referral code: {response}")
                 return None
         except Exception as e:
-            logger.error(
-                f"{self.user} error retrieving referral code: {str(e)}"
-            )
+            logger.error(f"{self.user} error retrieving referral code: {str(e)}")
             return None
 
     async def login_with_referral(self, referral_code: str | None = None):
@@ -581,7 +538,6 @@ class AuthClient(BaseHttpClient):
 
         # Perform standard authentication
         success, response = await self.login()
-
 
         if not success and "WALLET_ADDRESS_BLOCKED".lower() in str(response).lower():
             resource_manager = ResourceManager()

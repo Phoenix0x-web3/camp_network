@@ -1,24 +1,24 @@
-import asyncio
 from base64 import b64encode
 from json import dumps
 from time import time
+
 from loguru import logger
 from web3.types import TxParams
 
-from libs.eth_async.client import Client
-from libs.eth_async.data.models import Networks, TxArgs, TokenAmount
-from data.settings import Settings
 from data.models import Contracts
-from utils.db_api.models import Wallet
-from utils.browser import Browser
-from utils.retry import async_retry
+from data.settings import Settings
 from libs.base import Base
+from libs.eth_async.client import Client
+from libs.eth_async.data.models import Networks, TokenAmount, TxArgs
+from utils.browser import Browser
+from utils.db_api.models import Wallet
+from utils.retry import async_retry
 
 
 class CoPass(Base):
     def __init__(self, wallet: Wallet) -> None:
         super().__init__(wallet=wallet, client=Client(private_key=wallet.private_key, network=Networks.Camp))
-        self.__module_name__ = "CoPass" 
+        self.__module_name__ = "CoPass"
         self.browser = Browser(wallet=wallet)
         self.session_headers = {
             "Origin": "https://copass.app",
@@ -52,28 +52,16 @@ class CoPass(Base):
         badge_data = {
             "name": "Copass Basecamp Testnet Bronze Badge",
             "description": "Awarded for a special achievement in copass.app",
-            "image": f"https://copass.app/api/badge/?points={wallet_stats['totalPoints']}&address={self.client.account.address[:5].lower()}...{self.client.account.address[-4:].lower()}&chainId=123420001114&status=bronze&timestamp={int(time() * 1e3)}"
+            "image": f"https://copass.app/api/badge/?points={wallet_stats['totalPoints']}&address={self.client.account.address[:5].lower()}...{self.client.account.address[-4:].lower()}&chainId=123420001114&status=bronze&timestamp={int(time() * 1e3)}",
         }
         token_data = b64encode(dumps(badge_data, separators=(",", ":")).encode()).decode()
         token_uri = f"data:application/json;base64,{token_data}"
 
         # Prepare transaction
-        args = TxArgs(
-            points=wallet_stats["totalPoints"],
-            signature=wallet_stats["signature"],
-            tokenUri=token_uri
-        )
+        args = TxArgs(points=wallet_stats["totalPoints"], signature=wallet_stats["signature"], tokenUri=token_uri)
         data = contract.encode_abi("mint", args=(args.tuple()))
-        tx_params = TxParams(
-            to=Contracts.COPASS.address,
-            data=data,
-            value=mint_amount.Wei
-        )
-        result = await self.execute_transaction(
-            tx_params=tx_params,
-            activity_type=tx_label,
-            retry_count=3
-        )
+        tx_params = TxParams(to=Contracts.COPASS.address, data=data, value=mint_amount.Wei)
+        result = await self.execute_transaction(tx_params=tx_params, activity_type=tx_label, retry_count=3)
 
         if result.success:
             logger.success(f"{self.wallet} Successfully minted CoPass Bronze Activity Badge")
@@ -85,8 +73,8 @@ class CoPass(Base):
     @async_retry()
     async def get_wallet_stats(self):
         response = await self.browser.get(
-            url=f'https://copass.app/api/wallet-statistics/common?address={self.client.account.address}&chainId=123420001114',
-            headers=self.session_headers
+            url=f"https://copass.app/api/wallet-statistics/common?address={self.client.account.address}&chainId=123420001114",
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Wallet stats response: {data}")

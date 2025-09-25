@@ -5,39 +5,35 @@ import inquirer
 from colorama import Fore
 from inquirer.themes import Default
 from rich.console import Console
-from utils.create_files import create_files
+
 from functions.activity import activity
-from utils.db_import_export_sync import Import, Export, Sync
-from utils.db_api import migrate
+from utils.create_files import create_files
+from utils.db_import_export_sync import Export, Import, Sync
 from utils.encryption import check_encrypt_param
 from utils.output import show_channel_info
 
-
 console = Console()
 
-PROJECT = 'Camp Network'
+PROJECT = "Camp Network"
 
-PROJECT_ACTIONS =   [
-                    "Complete All Quests and Onchain Actions",
-                    "Complete Twitter and Regular Quests",
-                    "Complete Regular Quests",
-                    "Complete Twitter Quests", 
-                    "Complete Onchain and Faucet",
-                    "Complete Faucet",
-                    "Update Points",
-                    "Back"
-                    ]
+PROJECT_ACTIONS = [
+    "Complete All Quests and Onchain Actions",
+    "Complete Twitter and Regular Quests",
+    "Complete Regular Quests",
+    "Complete Twitter Quests",
+    "Complete Onchain and Faucet",
+    "Complete Faucet",
+    "Update Points",
+    "Back",
+]
+
 
 async def choose_action():
     cat_question = [
         inquirer.List(
             "category",
-            message=Fore.LIGHTBLACK_EX + 'Choose action',
-            choices=[
-                "DB Actions",
-                PROJECT,
-                "Exit"
-            ],
+            message=Fore.LIGHTBLACK_EX + "Choose action",
+            choices=["DB Actions", PROJECT, "Exit"],
         )
     ]
 
@@ -49,10 +45,7 @@ async def choose_action():
         raise SystemExit(0)
 
     if category == "DB Actions":
-        actions = ["Import wallets to Database",
-                   "Sync wallets with tokens and proxies",
-                   "Export wallets to TXT",
-                   "Back"]
+        actions = ["Import wallets to Database", "Sync wallets with tokens and proxies", "Export wallets to TXT", "Back"]
 
     if category == PROJECT:
         actions = PROJECT_ACTIONS
@@ -110,12 +103,13 @@ async def choose_action():
 
     await choose_action()
 
+
 async def main():
     create_files()
     await choose_action()
 
-if __name__ == '__main__':
 
+if __name__ == "__main__":
     show_channel_info(PROJECT)
 
     if platform.system() == "Windows":

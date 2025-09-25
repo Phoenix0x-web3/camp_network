@@ -1,7 +1,8 @@
 import asyncio
+from datetime import datetime, timedelta
+
 from curl_cffi import CurlError
 from loguru import logger
-from datetime import datetime, timedelta
 
 from data.settings import Settings
 from utils.browser import Browser
@@ -63,36 +64,28 @@ class Faucet:
             logger.debug("Send submit captcha")
             if response.status_code != 200:
                 logger.debug("status code not 200")
-                raise FaucetError(
-                    f"Captcha submission failed: HTTP {response.status_code}"
-                )
+                raise FaucetError(f"Captcha submission failed: HTTP {response.status_code}")
             data = response.json()
             if data.get("status") != 1:
-                raise FaucetError(
-                    f"Captcha submission error: {data.get('request')}"
-                )
+                raise FaucetError(f"Captcha submission error: {data.get('request')}")
             captcha_id = data.get("request")
-            logger.debug(
-                f"{self.user} success submit capthca solving request {captcha_id}"
-            )
+            logger.debug(f"{self.user} success submit capthca solving request {captcha_id}")
 
             # Poll for captcha solution
             for _ in range(45):  # Max 3 minutes wait (30 * 6 seconds)
                 await asyncio.sleep(6)
-                params={
+                params = {
                     "key": self.api_key,
                     "action": "get",
                     "id": captcha_id,
                     "json": 1,
                 }
                 logger.debug(params)
-                response = await self.browser.get(url=f"{self.captcha_url}/res.php",params=params)
+                response = await self.browser.get(url=f"{self.captcha_url}/res.php", params=params)
                 logger.debug("success sumbit solution")
                 if response.status_code != 200:
                     logger.debug("status code not 200")
-                    raise FaucetError(
-                        f"Captcha polling failed: HTTP {response.status_code}"
-                    )
+                    raise FaucetError(f"Captcha polling failed: HTTP {response.status_code}")
                 result = response.json()
                 logger.debug(result)
                 if result.get("status") == 1:
@@ -100,12 +93,8 @@ class Faucet:
 
                 if result.get("request") != "CAPCHA_NOT_READY":
                     if result.get("request") == "ERROR_CAPTCHA_UNSOLVABLE":
-                        raise CaptchaUnsolvableError(
-                            f"{self.user} Captcha unsolvable error"
-                        )
-                    raise FaucetError(
-                        f"Captcha solving failed: {result.get('request')}"
-                    )
+                        raise CaptchaUnsolvableError(f"{self.user} Captcha unsolvable error")
+                    raise FaucetError(f"Captcha solving failed: {result.get('request')}")
             raise FaucetError("Captcha solving timeout")
         except CurlError as e:
             raise FaucetError(f"Network error during captcha solving: {str(e)}")
@@ -130,22 +119,14 @@ class Faucet:
 
             response = await self.browser.post(url=self.base_url, headers=self.headers, json=json_data)
             if response.status_code != 200:
-                logger.debug(
-                    f"{self.user} request failed {response.status_code} {response.text}"
-                )
+                logger.debug(f"{self.user} request failed {response.status_code} {response.text}")
                 if response.status_code == 429:
                     update_faucet_time(private_key=self.user.private_key, new_time=datetime.now())
-                    raise RateLimitError(
-                        f"{self.user} Rate limit exceeded: Tokens already claimed from this IP in last 24 hours"
-                    )
-                raise FaucetError(
-                    f"{self.user} Claim request failed: HTTP {response.status_code} {response.text}"
-                )
+                    raise RateLimitError(f"{self.user} Rate limit exceeded: Tokens already claimed from this IP in last 24 hours")
+                raise FaucetError(f"{self.user} Claim request failed: HTTP {response.status_code} {response.text}")
             result = response.json()
             if "error" in result:
-                raise FaucetError(
-                    f"{self.user} Faucet error: {result['error']}"
-                )
+                raise FaucetError(f"{self.user} Faucet error: {result['error']}")
             logger.success(f"{self.user} success faucet claim")
             return result
 
@@ -164,5 +145,3 @@ class Faucet:
             except FaucetError:
                 continue
         return False
-
-        

@@ -1,10 +1,11 @@
+from rich import box
 from rich.console import Console
 from rich.table import Table
-from rich import box
+
 
 def show_channel_info(project_name):
     console = Console()
-    
+
     table = Table(
         show_header=False,
         box=box.DOUBLE,
@@ -22,7 +23,7 @@ def show_channel_info(project_name):
     table.add_row("[link]https://t.me/phoenix_w3[/link]")
     table.add_row("")
     table.add_row("─" * 50)
- 
+
     print("   ", end="")
     print()
     console.print(table)

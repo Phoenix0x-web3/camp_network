@@ -1,16 +1,20 @@
 import asyncio
-from imaplib import IMAP4_SSL, IMAP4
-from bs4 import BeautifulSoup
-from time import time
-from loguru import logger
 from email import message_from_bytes
-from typing import Union, List
+from imaplib import IMAP4, IMAP4_SSL
+from time import time
+from typing import List, Union
+
+from bs4 import BeautifulSoup
+from loguru import logger
 
 from data.settings import Settings
 
+
 class MailTimedOut(Exception):
     """Custom exception for email timeout errors."""
+
     pass
+
 
 class Mail:
     def __init__(self, mail_data: str):
@@ -20,9 +24,9 @@ class Mail:
         self.imap = None
         self.fake_mail = None
         if "icloud" in mail_data:
-            self.mail_login, self.mail_pass, self.fake_mail = mail_data.split(':')
+            self.mail_login, self.mail_pass, self.fake_mail = mail_data.split(":")
         else:
-            self.mail_login, self.mail_pass = mail_data.split(':', 1)
+            self.mail_login, self.mail_pass = mail_data.split(":", 1)
         try:
             self._login(only_check=True)
         except ValueError as e:
@@ -61,7 +65,7 @@ class Mail:
         while time() < start_time + 180:
             try:
                 await asyncio.sleep(5)
-                _, mailbox_data = self.imap.select('INBOX')
+                _, mailbox_data = self.imap.select("INBOX")
                 last_mail_id = mailbox_data[0]
                 if isinstance(last_mail_id, int):
                     last_mail_id = last_mail_id.decode()
@@ -75,11 +79,11 @@ class Mail:
                     msg = message_from_bytes(raw_email)
 
                 if (
-                    msg and
-                    msg["From"] in msg_from and
-                    (not self.fake_mail or msg["To"] == self.fake_mail) and
-                    (not subject or msg["Subject"] == subject) and
-                    (not part_subject or part_subject in (msg["Subject"] or "")) 
+                    msg
+                    and msg["From"] in msg_from
+                    and (not self.fake_mail or msg["To"] == self.fake_mail)
+                    and (not subject or msg["Subject"] == subject)
+                    and (not part_subject or part_subject in (msg["Subject"] or ""))
                 ):
                     return self._format_mail(msg)
 
@@ -98,12 +102,12 @@ class Mail:
         try:
             if not mail.is_multipart():
                 payload = mail.get_payload(decode=True)
-                return BeautifulSoup(payload.decode(), 'html.parser')
+                return BeautifulSoup(payload.decode(), "html.parser")
 
             for part in mail.walk():
                 if part.get_content_type() == "text/html":
                     payload = part.get_payload(decode=True)
-                    return BeautifulSoup(payload.decode(), 'html.parser')
+                    return BeautifulSoup(payload.decode(), "html.parser")
 
             raise ValueError("No HTML content found in email")
         except Exception as e:

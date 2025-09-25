@@ -1,35 +1,34 @@
 import asyncio
 import random
+
 from loguru import logger
 
+from data.models import Contracts
 from data.settings import Settings
-from utils.db_api.models import Wallet
-from modules.tasks.camp_tasks.remix import Remix
+from libs.base import Base
+from libs.eth_async.client import Client
+from libs.eth_async.data.models import Networks
+from modules.tasks.camp_tasks.awana import Awana
 from modules.tasks.camp_tasks.bleetz import Bleetz
 from modules.tasks.camp_tasks.chainbills import ChainBillsCreate, ChainBillsWithdraw
 from modules.tasks.camp_tasks.conft import CoNFT
 from modules.tasks.camp_tasks.copass import CoPass
 from modules.tasks.camp_tasks.merv import Merv
-from modules.tasks.camp_tasks.mysphere import MySphere
-from modules.tasks.camp_tasks.storychain import Storychain
-from modules.tasks.camp_tasks.awana import Awana
-from modules.tasks.camp_tasks.panenka import Panenka
-from modules.tasks.camp_tasks.tokentails import TokenTails
 from modules.tasks.camp_tasks.mint import MintFunctions
+from modules.tasks.camp_tasks.mysphere import MySphere
+from modules.tasks.camp_tasks.panenka import Panenka
+from modules.tasks.camp_tasks.remix import Remix
 from modules.tasks.camp_tasks.scoreplay import Scoreplay
-from libs.base import Base
-from libs.eth_async.client import Client
-from libs.eth_async.data.models import Networks
-from data.models import Contracts
+from modules.tasks.camp_tasks.storychain import Storychain
+from modules.tasks.camp_tasks.tokentails import TokenTails
+from utils.db_api.models import Wallet
 
 
 class CampOnchain(Base):
     def __init__(self, wallet: Wallet) -> None:
         self.wallet = wallet
         self.settings = Settings()
-        self.client = Client(
-            private_key=wallet.private_key, network=Networks.Camp, proxy=wallet.proxy
-        )
+        self.client = Client(private_key=wallet.private_key, network=Networks.Camp, proxy=wallet.proxy)
         self.mint_funcs = MintFunctions(wallet=self.wallet)
 
     async def handle_actions(self) -> bool:
@@ -125,7 +124,7 @@ class CampOnchain(Base):
                         continue
                 elif action == "base_camp":
                     need_mint, quantity = await self.mint_funcs.need_mint_and_quantity(
-                        contract=base_camp_contract, max_mint=base_camp_max_mint,action=action
+                        contract=base_camp_contract, max_mint=base_camp_max_mint, action=action
                     )
                     if need_mint and quantity:
                         await self.mint_funcs.base_camp_mint(contract=base_camp_contract, quantity=quantity)
@@ -194,7 +193,7 @@ class CampOnchain(Base):
                 random_sleep = random.randint(start_delay, end_delay)
                 logger.info(f"{self.wallet} sleep {random_sleep} seconds before next action")
                 await asyncio.sleep(random_sleep)
-            except Exception as e:
+            except Exception:
                 continue
 
         logger.success(f"{self.wallet} Completed all actions processing")

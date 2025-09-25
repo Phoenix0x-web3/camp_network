@@ -1,18 +1,18 @@
 from datetime import datetime, timezone
-from string import hexdigits
 from random import choices
+from string import hexdigits
+
+from eth_account.messages import encode_defunct
 from loguru import logger
 from web3.types import TxParams
-from eth_account.messages import encode_defunct
-
-from libs.eth_async.data.models import TxArgs, Networks
-from libs.eth_async.client import Client
 
 from data.models import Contracts
-from utils.browser import Browser
-from utils.retry import async_retry
-from utils.db_api.models import Wallet
 from libs.base import Base
+from libs.eth_async.client import Client
+from libs.eth_async.data.models import Networks, TxArgs
+from utils.browser import Browser
+from utils.db_api.models import Wallet
+from utils.retry import async_retry
 
 
 class Bleetz(Base):
@@ -48,7 +48,7 @@ class Bleetz(Base):
 
         # Prepare and sign message
         issued_at = datetime.now(tz=timezone.utc).isoformat(timespec="milliseconds")[:-6] + "Z"
-        nonce = ''.join(choices(hexdigits.lower(), k=24))
+        nonce = "".join(choices(hexdigits.lower(), k=24))
         sign_text = (
             f"Click to sign in and accept the EntertainM Terms of Service "
             f"(https://www.entertainm.io/terms-and-conditions) and Privacy Policy "
@@ -82,15 +82,8 @@ class Bleetz(Base):
 
         args = TxArgs()
         data = contract.encode_abi("mintGamerID", args=(args.tuple()))
-        tx_params = TxParams(
-            to=Contracts.BLEETZ.address,
-            data=data
-        )
-        result = await self.execute_transaction(
-            tx_params=tx_params,
-            activity_type=tx_label,
-            retry_count=3
-        )
+        tx_params = TxParams(to=Contracts.BLEETZ.address, data=data)
+        result = await self.execute_transaction(tx_params=tx_params, activity_type=tx_label, retry_count=3)
 
         if result.success:
             logger.success(f"{self.wallet} Successfully minted Bleetz GamerID")
@@ -102,14 +95,14 @@ class Bleetz(Base):
     @async_retry()
     async def bleetz_get_sign_data(self):
         response = await self.browser.post(
-            url='https://api.getpara.com/users/external-wallets/login',
+            url="https://api.getpara.com/users/external-wallets/login",
             json={
                 "externalAddress": self.client.account.address,
                 "type": "EVM",
                 "externalWalletProvider": "MetaMask",
-                "shouldTrackUser": True
+                "shouldTrackUser": True,
             },
-            headers=self.session_headers
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Sign data response: {data}")
@@ -120,12 +113,9 @@ class Bleetz(Base):
     @async_retry()
     async def bleetz_login(self, sign_text: str, signature: str):
         response = await self.browser.post(
-            url='https://services.meta-night.club/api/v1/auth/login',
-            json={
-                "signature": signature,
-                "message": sign_text
-            },
-            headers=self.session_headers
+            url="https://services.meta-night.club/api/v1/auth/login",
+            json={"signature": signature, "message": sign_text},
+            headers=self.session_headers,
         )
         data = response.json()
         logger.debug(f"{self.wallet} Login response: {data}")
@@ -136,9 +126,7 @@ class Bleetz(Base):
     @async_retry()
     async def bleetz_fetch_user(self, cognito_id: str):
         response = await self.browser.post(
-            url='https://services.meta-night.club/api/v1/fetch-user',
-            json={"cognitoId": cognito_id},
-            headers=self.session_headers
+            url="https://services.meta-night.club/api/v1/fetch-user", json={"cognitoId": cognito_id}, headers=self.session_headers
         )
         data = response.json()
         logger.debug(f"{self.wallet} Fetch user response: {data}")

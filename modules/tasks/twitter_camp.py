@@ -1,6 +1,7 @@
 import asyncio
 import random
-from typing import List, Dict
+from typing import Dict, List
+
 from loguru import logger
 
 from data.settings import Settings
@@ -8,8 +9,9 @@ from modules.tasks.http_client import BaseHttpClient
 from modules.tasks.quests import QuestClient
 from modules.tasks.resource_manager import ResourceManager
 from utils.db_api.models import Wallet
-from utils.db_api.wallet_api import update_twitter_token, get_wallet_by_private_key, get_completed_quests
+from utils.db_api.wallet_api import get_completed_quests, get_wallet_by_private_key, update_twitter_token
 from utils.twitter.twitter_client import TwitterClient
+
 
 class TwitterService(BaseHttpClient):
     """Service layer for Twitter-related operations using TwitterClient"""
@@ -48,18 +50,14 @@ class TwitterService(BaseHttpClient):
                 "organizationId": "26a1764f-5637-425e-89fa-2f3fb86e758c",
             }
 
-            headers = await self.get_headers({
-                "Accept": "application/json, text/plain, */*",
-                "Referer": "https://loyalty.campnetwork.xyz/loyalty",
-            })
-
-            success, response = await self.request(
-                url=url,
-                method="GET",
-                params=params,
-                headers=headers,
-                timeout=30
+            headers = await self.get_headers(
+                {
+                    "Accept": "application/json, text/plain, */*",
+                    "Referer": "https://loyalty.campnetwork.xyz/loyalty",
+                }
             )
+
+            success, response = await self.request(url=url, method="GET", params=params, headers=headers, timeout=30)
 
             if success and isinstance(response, dict) and "data" in response:
                 user_data = response.get("data", [])[0] if response.get("data") else None
@@ -67,7 +65,7 @@ class TwitterService(BaseHttpClient):
                     user_metadata = user_data["userMetadata"][0] if user_data["userMetadata"] else None
                     if user_metadata and user_metadata.get("twitterUser") and user_metadata.get("twitterVerifiedAt"):
                         logger.info(f"{self.user} Twitter is connected (@{user_metadata.get('twitterUser')})")
-                        self.twitter_username = user_metadata.get('twitterUser')
+                        self.twitter_username = user_metadata.get("twitterUser")
                         self.twitter_client.is_connected = True
                         return True
 
@@ -127,7 +125,6 @@ class TwitterService(BaseHttpClient):
         update_twitter_token(self.user.private_key, updated_user.twitter_token)
         return await self.reconnect_twitter()
 
-
     async def ensure_twitter_connected(self) -> bool:
         """
         Ensures Twitter is connected to the site, reconnecting if necessary.
@@ -139,7 +136,6 @@ class TwitterService(BaseHttpClient):
             return True
         logger.info(f"{self.user} Twitter not connected, attempting to connect")
         return await self.connect_twitter()
-
 
     async def get_db_completed_quests(self) -> List[str]:
         """
@@ -160,9 +156,7 @@ class TwitterService(BaseHttpClient):
             return completed_quests
 
         except Exception as e:
-            logger.error(
-                f"{self.user} error retrieving completed quests from database: {e}"
-            )
+            logger.error(f"{self.user} error retrieving completed quests from database: {e}")
             return []
 
     async def get_incomplete_quests(self) -> List[str]:
@@ -218,8 +212,7 @@ class TwitterService(BaseHttpClient):
             if not await self.twitter_client.initialize():
                 logger.error(f"{self.user} Failed to initialize Twitter client")
                 if self.twitter_client.last_error and any(
-                    x in self.twitter_client.last_error.lower()
-                    for x in ["unauthorized", "authentication", "token", "banned"]
+                    x in self.twitter_client.last_error.lower() for x in ["unauthorized", "authentication", "token", "banned"]
                 ):
                     if await self.replace_twitter_token():
                         # Reinitialize after token replacement
@@ -233,7 +226,6 @@ class TwitterService(BaseHttpClient):
 
             if self.twitter_username and self.twitter_client.twitter_account.username != self.twitter_username:
                 await self.reconnect_twitter()
-
 
             # Step 3: Initialize QuestClient
             quest_client = QuestClient(user=self.user)
@@ -346,11 +338,7 @@ class TwitterService(BaseHttpClient):
             }
 
             success, response = await self.request(
-                method="GET",
-                url=self.TWITTER_AUTH_URL,
-                headers=headers,
-                timeout=30,
-                allow_redirects=False
+                method="GET", url=self.TWITTER_AUTH_URL, headers=headers, timeout=30, allow_redirects=False
             )
 
             if not isinstance(response, dict):
@@ -358,7 +346,7 @@ class TwitterService(BaseHttpClient):
                 await self.twitter_client.close()
                 return False
 
-            twitter_auth_url = response['location']
+            twitter_auth_url = response["location"]
             logger.debug(f"{self.user} Got Twitter auth URL: {twitter_auth_url}")
 
             # Step 2: Use TwitterClient's OAuth2 method
@@ -370,16 +358,11 @@ class TwitterService(BaseHttpClient):
 
             callback_url = auth_data.callback_url
 
-            success, connect_response = await self.request(
-                method="GET",
-                url=callback_url,
-                timeout=30,
-                allow_redirects=False
-            )
+            success, connect_response = await self.request(method="GET", url=callback_url, timeout=30, allow_redirects=False)
             # Step 3: Follow callback redirect
             callback_response = connect_response
 
-            connect_url = callback_response['location']
+            connect_url = callback_response["location"]
             logger.debug(f"{self.user} Got connect URL: {connect_url}")
 
             # Step 4: Complete connection
@@ -399,11 +382,7 @@ class TwitterService(BaseHttpClient):
             }
 
             success, connect_response = await self.request(
-                method="GET",
-                url=connect_url,
-                headers=connect_headers,
-                timeout=30,
-                allow_redirects=False
+                method="GET", url=connect_url, headers=connect_headers, timeout=30, allow_redirects=False
             )
 
             # Check if connection was successful
@@ -433,12 +412,7 @@ class TwitterService(BaseHttpClient):
             }
 
             # Send disconnect request
-            success, response = await self.request(
-                method="POST",
-                url=self.TWITTER_DISCONNECT_URL,
-                headers=headers,
-                timeout=30
-            )
+            success, response = await self.request(method="POST", url=self.TWITTER_DISCONNECT_URL, headers=headers, timeout=30)
 
             if success:
                 logger.success(f"{self.user} Twitter successfully disconnected")

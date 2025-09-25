@@ -1,19 +1,15 @@
-from libs.eth_async.classes import Singleton
-from libs.eth_async.data.models import RawContract, DefaultABIs
-from libs.eth_async.utils.files import read_json
 from data.config import ABIS_DIR
+from libs.eth_async.classes import Singleton
+from libs.eth_async.data.models import DefaultABIs, RawContract
+from libs.eth_async.utils.files import read_json
 
 
 class Settings:
     pass
 
-class Contracts(Singleton):
 
-    ETH = RawContract(
-        title='ETH',
-        address='0x0000000000000000000000000000000000000000',
-        abi=DefaultABIs.Token
-    )
+class Contracts(Singleton):
+    ETH = RawContract(title="ETH", address="0x0000000000000000000000000000000000000000", abi=DefaultABIs.Token)
 
     BASE_CAMP = RawContract(
         title="BASE_CAMP",
@@ -74,66 +70,36 @@ class Contracts(Singleton):
         abi=read_json(path=(ABIS_DIR, "rarible.json")),
     )
 
-    REMIX = RawContract(
-        title="REMIX",
-        address="0xF90733b9eCDa3b49C250B2C3E3E42c96fC93324E",
-        abi=read_json(path=(ABIS_DIR, "remix.json"))
-    )
+    REMIX = RawContract(title="REMIX", address="0xF90733b9eCDa3b49C250B2C3E3E42c96fC93324E", abi=read_json(path=(ABIS_DIR, "remix.json")))
     BLEETZ = RawContract(
         title="BLEETZ",
         address="0x0b0A5B8e848b27a05D5cf45CAab72BC82dF48546",
-        abi='[{"inputs":[],"name":"mintGamerID","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
+        abi='[{"inputs":[],"name":"mintGamerID","outputs":[],"stateMutability":"nonpayable","type":"function"}]',
     )
     CHAINBILLS = RawContract(
-        title="CHAINBILLS",
-        address="0x92e67Bfe49466b18ccDF2A3A28B234AB68374c60",
-        abi=read_json(path=(ABIS_DIR, "chainbills.json"))
+        title="CHAINBILLS", address="0x92e67Bfe49466b18ccDF2A3A28B234AB68374c60", abi=read_json(path=(ABIS_DIR, "chainbills.json"))
     )
-    CONFT = RawContract(
-        title="CONFT",
-        address="0x7A72942d0F7C4d8909dC1f078319E97F06701092",
-        abi=read_json(path=(ABIS_DIR, "conft.json"))
-    )
+    CONFT = RawContract(title="CONFT", address="0x7A72942d0F7C4d8909dC1f078319E97F06701092", abi=read_json(path=(ABIS_DIR, "conft.json")))
     COPASS = RawContract(
-        title="COPASS",
-        address="0x2907aD6D787Df0eAA53b6C1C8dd6948475234C3f",
-        abi=read_json(path=(ABIS_DIR, "copass.json"))
+        title="COPASS", address="0x2907aD6D787Df0eAA53b6C1C8dd6948475234C3f", abi=read_json(path=(ABIS_DIR, "copass.json"))
     )
-    MERV = RawContract(
-        title="MERV",
-        address="0xe5e5bE029793A4481287Be2BFc37e2D38316c422",
-        abi=read_json(path=(ABIS_DIR, "merv.json"))
-    )
+    MERV = RawContract(title="MERV", address="0xe5e5bE029793A4481287Be2BFc37e2D38316c422", abi=read_json(path=(ABIS_DIR, "merv.json")))
     MYSPHERE_POST = RawContract(
-        title="MYSPHERE_POST",
-        address="0x177Af844a3c7A1749dE97656a5d84b6373Fc350E",
-        abi=read_json(path=(ABIS_DIR, "mysphere.json"))
+        title="MYSPHERE_POST", address="0x177Af844a3c7A1749dE97656a5d84b6373Fc350E", abi=read_json(path=(ABIS_DIR, "mysphere.json"))
     )
     MYSPHERE_NFT = RawContract(
-        title="MYSPHERE_NFT",
-        address="0x1eD74B27f846C699A90926daD057A7f6FD22C126",
-        abi=read_json(path=(ABIS_DIR, "mysphere.json"))
+        title="MYSPHERE_NFT", address="0x1eD74B27f846C699A90926daD057A7f6FD22C126", abi=read_json(path=(ABIS_DIR, "mysphere.json"))
     )
     MYSTERY_BOXES_TOKEN_TAILS = [
         RawContract(
-            title="CAMP_1",
-            address="0xa0D4687483F049c53e6EC8cBCbc0332C74180168",
-            abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
+            title="CAMP_1", address="0xa0D4687483F049c53e6EC8cBCbc0332C74180168", abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
         ),
         RawContract(
-            title="CAMP_2",
-            address="0x0A65888A4F76D821A3148620866BC65A5db599BB",
-            abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
+            title="CAMP_2", address="0x0A65888A4F76D821A3148620866BC65A5db599BB", abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
         ),
         RawContract(
-            title="CAMP_3",
-            address="0xec735A2Ba32703215b3e40d669C61FBd849b422a",
-            abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
+            title="CAMP_3", address="0xec735A2Ba32703215b3e40d669C61FBd849b422a", abi=read_json(path=(ABIS_DIR, "tokenTails.json"))
         ),
     ]
 
-    TSCORE = RawContract(
-        title="TSCORE",
-        address="0x861fb672cD710a1611BCDb9Cb40473DECF41d026",
-        abi=DefaultABIs.Token
-    )
+    TSCORE = RawContract(title="TSCORE", address="0x861fb672cD710a1611BCDb9Cb40473DECF41d026", abi=DefaultABIs.Token)
